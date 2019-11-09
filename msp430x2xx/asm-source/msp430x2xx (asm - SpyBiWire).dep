@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project>
+  <fileVersion>2</fileVersion>
+  <fileChecksum>3972295773</fileChecksum>
+  <configuration>
+    <name>Debug</name>
+    <outputs>
+      <file>$PROJ_DIR$\msp430x2xx_fet_1.s43</file>
+      <file>$TOOLKIT_DIR$\config\linker\lnk430f2618.xcl</file>
+      <file>$PROJ_DIR$\Debug\Obj\msp430x2xx_fet_1.r43</file>
+      <file>$PROJ_DIR$\Debug\Exe\msp430x2xx (asm - SpyBiWire).d43</file>
+      <file>$TOOLKIT_DIR$\inc\msp430f2618.h</file>
+      <file>$TOOLKIT_DIR$\config\linker\multiplier.xcl</file>
+      <file>$TOOLKIT_DIR$\inc\msp430.h</file>
+    </outputs>
+    <file>
+      <name>[ROOT_NODE]</name>
+      <outputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 3</file>
+        </tool>
+      </outputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\msp430x2xx_fet_1.s43</name>
+      <outputs>
+        <tool>
+          <name>A430</name>
+          <file> 2</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>A430</name>
+          <file> 6 4</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Debug\Exe\msp430x2xx (asm - SpyBiWire).d43</name>
+      <inputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 1 5 2</file>
+        </tool>
+      </inputs>
+    </file>
+  </configuration>
+</project>
+
+
