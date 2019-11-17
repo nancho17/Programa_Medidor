@@ -391,6 +391,7 @@
         <option>
           <name>newCCIncludePaths</name>
           <state>C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\C-extras</state>
+          <state>C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc\dlib\c</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>

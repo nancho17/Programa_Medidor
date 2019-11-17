@@ -11,13 +11,13 @@ ByteLimit=50
 [EEM State Storage]
 Buffer=BAAAAAAAAAAAAAAAAAAAAAAA
 [EEM Sequencer]
-Buffer=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Buffer=AAAAAAAAAAAAAAAAAAAAAAAADAAAAAAADAAAAAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAAAADAAAAAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 [EEM Cycle Counter 0]
 Counter0=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 [EEM Cycle Counter 1]
 Counter1=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 [DebugChecksum]
-Checksum=-17646489
+Checksum=-415790219
 [CodeCoverage]
 Enabled=_ 0
 [DriverProfiling]
@@ -72,13 +72,6 @@ Path=C:\Users\herda\Desktop\afa1
 LogEnabled=0
 GraphEnabled=0
 ShowTimeLog=1
-[Log file]
-LoggingEnabled=_ 0
-LogFile=_ ""
-Category=_ 0
-[TermIOLog]
-LoggingEnabled=_ 0
-LogFile=_ ""
 [Breakpoints]
 Count=0
 [FET]
@@ -101,6 +94,13 @@ SP=0
 SR=0
 all registers=0
 File name=
+[Log file]
+LoggingEnabled=_ 0
+LogFile=_ ""
+Category=_ 0
+[TermIOLog]
+LoggingEnabled=_ 0
+LogFile=_ ""
 [Aliases]
 Count=0
 SuppressDialog=0

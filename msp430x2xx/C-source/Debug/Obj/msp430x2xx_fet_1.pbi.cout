@@ -4,6 +4,8 @@
 -I
 C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\C-extras
 -I
+C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc\dlib\c
+-I
 C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc\clib
 -I
 C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc
@@ -11,6 +13,8 @@ C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc
 C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc\clib
 -I
 C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\C-extras
+-I
+C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc\dlib\c
 -D__MSP430F2618__=1
 -D__CHAR_BITS__=8
 -D__CHAR_MAX__=0xff
