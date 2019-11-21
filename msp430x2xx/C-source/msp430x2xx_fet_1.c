@@ -51,6 +51,8 @@ static volatile bool tick1_1000ms_elapsed = false;
 
 /*---------Global_Variables---------*/
 uint8_t DATA_ADE[3];
+  
+
 uint8_t auxiliar=0;
 
 
@@ -106,10 +108,14 @@ __interrupt void Timer_A_1 (void){
 #pragma vector=USCIAB0RX_VECTOR
 __interrupt void USCI0RX_ISR(void){
     LPM1_EXIT;
-    
+    //while (!(IFG2&UCA0TXIFG));                // USCI_A0 TX buffer ready?
+    //UCA0TXBUF = UCA0RXBUF;
     if (auxiliar>2) {
     auxiliar=0;}
-    DATA_ADE[auxiliar]=UCA0RXBUF;
+    DATA_ADE[0]=UCA0RXBUF;
+    DATA_ADE[1]=UCA0RXBUF;
+    DATA_ADE[2]=UCA0RXBUF;
+    
     auxiliar++;
    
 
@@ -119,8 +125,11 @@ __interrupt void USCI0RX_ISR(void){
 
 
 
+
 int main(void)
-{   
+{   DATA_ADE[0]=0;
+    DATA_ADE[1]=0;
+    DATA_ADE[2]=0;
     WDTCTL = WDTPW+WDTHOLD;               // Stop watchdog timer
     for (int i = 0; i < 0xfffe; i++);             // Delay for XTAL stabilization
      
@@ -130,8 +139,8 @@ int main(void)
     P4DIR |= 0xFF;                        // Set P2.0 to output direction
     P4OUT = 0x00;
     
-    P5DIR |= 0x78;                            // P5.6,5,4,3 outputs
-    P5SEL |= 0x70;                            // P5.6,5,4 options
+   // P5DIR |= 0x78;                            // P5.6,5,4,3 outputs
+    //P5SEL |= 0x70;                            // P5.6,5,4 options
     
     for (int a=0;a<2;a=a+1)
     {
@@ -183,8 +192,8 @@ int main(void)
             switch(a){
   
                 case 0x01: if(Escritura_ADE795(0x35)){a=0x02;} break;  //Lectura 35 Escritura CA
-                case 0x02: if(Escritura_ADE795(0x03)){a=0x03;} break;
-                case 0x03: if(Escritura_ADE795(0x18)){a=0x04;} break;
+                case 0x02: if(Escritura_ADE795(0x00)){a=0x03;} break;
+                case 0x03: if(Escritura_ADE795(0xFD)){a=0x01;} break;
                 
                 default:
                     //ERROR_de_escritura_lectura(); a=0x01;
@@ -193,6 +202,9 @@ int main(void)
             
             if(auxiliar==3){
               ReadedADE[0]=DATA_ADE[0];
+              ReadedADE[1]=DATA_ADE[1];
+              ReadedADE[2]=DATA_ADE[2];
+              
             }
          
           
@@ -216,7 +228,7 @@ int main(void)
             tick1_1000ms_elapsed = false; // Reset the flag (signal 'handled')
         }
 
-        LPM1;
+        //LPM1;
     };
     
     //__bis_SR_register(LPM0_bits); // Enter LPM0 w/ interrupt    
@@ -234,7 +246,7 @@ void UART0_P3_config (void){
     /* Comm ADE7953 4800baud oversampling */
   
     P3SEL = 0x30;                           // P3.4,5 = USCI_A0 TXD/RXD
-    UCA0CTL1 |= UCSSEL_2;                   // SMCLK
+    UCA0CTL1 |= UCSSEL0;//ACLK   //UCSSEL_2;                   // SMCLK
     //UCA0CTL0=0;                         //LSB first, 8-bit data, Parity disabled        0x0060
     
     UCA0BR0 = 208;                          // 16 MHz 4800
@@ -243,7 +255,7 @@ void UART0_P3_config (void){
     
     UCA0CTL1 &= ~UCSWRST;                   // **Initialize USCI state machine**
     IE2 |= UCA0RXIE;                        // Enable USCI_A0 RX interrupt //UCA0TXIE para TX
-   
+   __bis_SR_register( GIE);
 
     //Max. TX bit error: -0.10999999999997123(-0.10999999999997123,0)
     //Max. RX bit error (sync.: -0.5 BRCLK): -0.10500000000010501(-0.10500000000010501,0)
@@ -345,4 +357,5 @@ void Set_DCO_using32kHz(void)                          // Set DCO to selected fr
     TACTL = 0;                                // Stop Timer_A
     BCSCTL1 &= ~DIVA_3;                       // ACLK = LFXT1CLK = 32.768KHz
 }
+
 
