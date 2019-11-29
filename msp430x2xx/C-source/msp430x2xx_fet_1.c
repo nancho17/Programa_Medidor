@@ -36,12 +36,16 @@ void Set_DCO_using32kHz(void);
 void Set_DCO_1MHzstored(void);
 void UART0_P3_config (void);
 bool Escritura_ADE795 ( uint8_t); 
-void Lectura_ADE795 ( void); 
+void Lectura_ADE795 ( void);
+void ADE_Lectura_1ms_TIMING(uint8_t*);
+void ADE_Interruptor_RX(void);
 
 /*---------NO_Optimized_Variables---------*/
 static volatile uint32_t ms_ticks = 0;
 static volatile uint32_t ms4_ticks = 0;
-static volatile bool tick_1ms_elapsed = false;
+
+static volatile bool tick_0ms5_elapsed = false;
+//static volatile bool tick_1ms_elapsed = false;
 static volatile bool tick_500ms_elapsed = false;
 static volatile bool tick_200ms_elapsed = false;
 static volatile bool tick_100ms_elapsed = false;
@@ -50,8 +54,10 @@ static volatile bool tick1_4ms_elapsed = false;
 static volatile bool tick1_1000ms_elapsed = false;
 
 /*---------Global_Variables---------*/
+
+bool wellsended = false;
+
 uint8_t DATA_ADE[3];
-  
 
 uint8_t auxiliar=0;
 
@@ -61,7 +67,7 @@ uint8_t auxiliar=0;
 void Time_Handler_1(void)
 {
     ms_ticks++;
-    tick_1ms_elapsed = true;  //1ms
+    tick_0ms5_elapsed = true;  //1ms
 
     if (ms_ticks % 500 == 0) {
         tick_500ms_elapsed = true; //500ms
@@ -108,18 +114,7 @@ __interrupt void Timer_A_1 (void){
 #pragma vector=USCIAB0RX_VECTOR
 __interrupt void USCI0RX_ISR(void){
     LPM1_EXIT;
-    //while (!(IFG2&UCA0TXIFG));                // USCI_A0 TX buffer ready?
-    //UCA0TXBUF = UCA0RXBUF;
-    if (auxiliar>2) {
-    auxiliar=0;}
-    DATA_ADE[0]=UCA0RXBUF;
-    DATA_ADE[1]=UCA0RXBUF;
-    DATA_ADE[2]=UCA0RXBUF;
-    
-    auxiliar++;
-   
-
-//    Lectura_ADE795();
+    ADE_Interruptor_RX();
 }
 
 
@@ -156,7 +151,9 @@ int main(void)
     }
     
     //P1DIR |= 0x01;                            // P1.0 output
-    CCR0 =16000; //65535; 1 ms
+    //CCR0 =16000; //65535; 1 ms
+    CCR0 =8000; //65535; 0.5 ms
+    
     CCR1 =64000; //65535; 4 ms
     
     CCTL0=0;
@@ -173,7 +170,7 @@ int main(void)
    
     UART0_P3_config();
     
-    uint8_t a=0x01; //Uart 3 data
+    uint8_t a=0x00; //Uart 3 data
     
     uint8_t ReadedADE[3];
     ReadedADE[0]=7;
@@ -185,32 +182,19 @@ int main(void)
     while (1) //milisecond controlled Loop
         {
           
-        if (tick_1ms_elapsed) {
-            //P4OUT ^= 0xFF;
-            //0x318 //V, (R) Default: 0x000000, Signed,Instantaneous voltage
-           
-            switch(a){
-  
-                case 0x01: if(Escritura_ADE795(0x35)){a=0x02;} break;  //Lectura 35 Escritura CA
-                case 0x02: if(Escritura_ADE795(0x00)){a=0x03;} break;
-                case 0x03: if(Escritura_ADE795(0xFD)){a=0x01;} break;
-                
-                default:
-                    //ERROR_de_escritura_lectura(); a=0x01;
-                    break;
+        if ( tick_0ms5_elapsed ) {
+          //P4OUT ^= 0xFF;
+          //0x318 
+          //V, (R) Default: 0x000000, Signed,Instantaneous voltage
+            ADE_Lectura_1ms_TIMING(&a);  
+            if(auxiliar==2){
+            ReadedADE[0]=DATA_ADE[0];
+            ReadedADE[1]=DATA_ADE[1];
+            //ReadedADE[2]=DATA_ADE[2];
+            auxiliar=4;
             }
-            
-            if(auxiliar==3){
-              ReadedADE[0]=DATA_ADE[0];
-              ReadedADE[1]=DATA_ADE[1];
-              ReadedADE[2]=DATA_ADE[2];
-              
-            }
-         
-          
-            
-            
-            tick_1ms_elapsed = false; // Reset the flag (signal 'handled')
+            tick_0ms5_elapsed  = false; // Reset the flag (signal 'handled')
+        
         }
         
         if (tick1_4ms_elapsed) {
@@ -225,6 +209,7 @@ int main(void)
 
         if (tick1_1000ms_elapsed) {
             P4OUT^= 0x0F;
+            
             tick1_1000ms_elapsed = false; // Reset the flag (signal 'handled')
         }
 
@@ -270,14 +255,7 @@ void Lectura_ADE795 (void){
   
 }
 
-bool Escritura_ADE795 ( uint8_t alfa){    
-    /*UCAxTXIFG is automatically reset if a character is written to UCAxTXBUF.*/
-    if (IFG2&UCA0TXIFG){ 
-        UCA0TXBUF =alfa;
-        return 1;
-    }
-    return 0;
-}
+
 
 void Set_DCO_1MHzstored(void){
     if (CALBC1_1MHZ ==0xFF || CALDCO_1MHZ == 0xFF)                                     
@@ -358,4 +336,38 @@ void Set_DCO_using32kHz(void)                          // Set DCO to selected fr
     BCSCTL1 &= ~DIVA_3;                       // ACLK = LFXT1CLK = 32.768KHz
 }
 
+bool Escritura_ADE795 ( uint8_t alfa){    
+    /*UCAxTXIFG is automatically reset if a character is written to UCAxTXBUF.*/
+    if (IFG2&UCA0TXIFG){ 
+        UCA0TXBUF =alfa;
+        return 1;
+    }
+    return 0;
+}
 
+void ADE_Lectura_1ms_TIMING( uint8_t* a)
+{
+    switch(*(a)){
+        case 0x00: if(Escritura_ADE795(0x35)){*(a)=0x01;}else{*(a)=0x0B;   wellsended=0;} break; //Lectura 35 Escritura CA
+        case 0x05: if(Escritura_ADE795(0x01)){*(a)=0x06;}else{*(a)=0x0B;   wellsended=0;} break; //
+        case 0x0A: if(Escritura_ADE795(0x02)){*(a)=0x0B;wellsended=1;}else{wellsended=0;} break; //
+        //0x8004 2 bytes
+        //case 0x1C: *(a)=0x00;   break;
+        case 0x17: *(a)=0x00; break;
+                                
+        default  : *(a)=*(a)+1; break;
+    }   
+}
+
+void ADE_Interruptor_RX(){
+    
+    if (wellsended){
+        if (auxiliar>1){
+        auxiliar=0;
+        wellsended=0;}
+        DATA_ADE[auxiliar]=UCA0RXBUF;
+        auxiliar++;
+    
+    }
+    else{UCA0RXBUF;auxiliar=0;}
+}
