@@ -17,7 +17,7 @@ Counter0=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 [EEM Cycle Counter 1]
 Counter1=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 [DebugChecksum]
-Checksum=813535989
+Checksum=657279775
 [CodeCoverage]
 Enabled=_ 0
 [DriverProfiling]
@@ -80,9 +80,9 @@ Category=_ 0
 LoggingEnabled=_ 0
 LogFile=_ ""
 [Breakpoints]
-Bp0=_ "Range" "Memory:0x2E" 0 "0x2f" 0 18 0 1 0 0 0 0 0 0
-Bp1=_ "Range" "Memory:0x2E" 0 "0x2f" 0 18 0 1 0 0 0 0 0 0
-Bp2=_ "Range" "Memory:0x2E" 0 "" 0 18 0 1 0 0 0 0 0 0
+Bp0=_ "Range" "Memory:0x2E" 0 "0x2f" 0 18 0 1 0 0 0 0 65531 65535
+Bp1=_ "Range" "Memory:0x2E" 0 "0x2f" 0 18 0 1 0 0 0 0 65531 65535
+Bp2=_ "Range" "Memory:0x2E" 0 "" 0 18 0 1 0 0 0 0 65531 65535
 Count=3
 [FET]
 Clock mode=46

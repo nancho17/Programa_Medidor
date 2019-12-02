@@ -22,9 +22,9 @@
 //******************************************************************************
 #include "msp430.h"
 #include "intrinsics.h"
-#include "driverlib.h"
 #include "stdint.h"
 #include "stdbool.h"
+#include "ADE7953.h"
 
 /*---------Task_Time_Definitions---------*/
 #define TAREA_ADE       100   // Valor en ms
@@ -35,10 +35,10 @@
 void Set_DCO_using32kHz(void);
 void Set_DCO_1MHzstored(void);
 void UART0_P3_config (void);
-bool Escritura_ADE795 ( uint8_t); 
-void Lectura_ADE795 ( void);
-void ADE_Lectura_1ms_TIMING(uint8_t*);
-void ADE_Interruptor_RX(void);
+//bool Escritura_ADE795 ( uint8_t); 
+//void Lectura_ADE795 ( void);
+//void ADE_Lectura_1ms_TIMING(uint8_t*);
+//void ADE_Interruptor_RX(void);
 
 /*---------NO_Optimized_Variables---------*/
 static volatile uint32_t ms_ticks = 0;
@@ -69,11 +69,16 @@ void Time_Handler_1(void)
     ms_ticks++;
     tick_0ms5_elapsed = true;  //1ms
 
-    if (ms_ticks % 500 == 0) {
+    if (ms_ticks > 999 ) {
         tick_500ms_elapsed = true; //500ms
         ms_ticks=0;
         }
-    CCR0+=16000;
+    CCR0+=8000;//0.250 ms 2000
+               //0.125 ms 1000
+               //0.0625 ms 500
+               
+                
+    
 }
 
 
@@ -81,7 +86,7 @@ void Time_Handler_2(void)
 {
     ms4_ticks++;
     tick1_4ms_elapsed = true;  // 4 ms
-    if (ms4_ticks % 250 == 0) {
+    if (ms4_ticks > 249) {
         tick1_1000ms_elapsed = true; // 1000 ms
         ms4_ticks=0;
         }
@@ -114,7 +119,7 @@ __interrupt void Timer_A_1 (void){
 #pragma vector=USCIAB0RX_VECTOR
 __interrupt void USCI0RX_ISR(void){
     LPM1_EXIT;
-    ADE_Interruptor_RX();
+    DATA_ADE[auxiliar]=ADE_Interruptor_RX(auxiliar);
 }
 
 
@@ -152,9 +157,9 @@ int main(void)
     
     //P1DIR |= 0x01;                            // P1.0 output
     //CCR0 =16000; //65535; 1 ms
-    CCR0 =8000; //65535; 0.5 ms
+    CCR0 =48; //65535; 0.250 ms
     
-    CCR1 =64000; //65535; 4 ms
+    CCR1 =16; //65535; 4 ms
     
     CCTL0=0;
     CCTL1=0;
@@ -186,7 +191,8 @@ int main(void)
           //P4OUT ^= 0xFF;
           //0x318 
           //V, (R) Default: 0x000000, Signed,Instantaneous voltage
-            ADE_Lectura_1ms_TIMING(&a);  
+            ADE_Lectura_0ms5_TIMING(&a);
+         //   ADE_Lectura_1ms_TIMING(&a);  
             if(auxiliar==2){
             ReadedADE[0]=DATA_ADE[0];
             ReadedADE[1]=DATA_ADE[1];
@@ -249,11 +255,6 @@ void UART0_P3_config (void){
     //Max. RX bit error (over: -0.5,0,+0.5): 0(-0.10500000000010501,0.024999999999994644)
 }
 
-void Lectura_ADE795 (void){    
-    UCA0RXBUF;                    // TX -> RXed character
-    // asasasasd //
-  
-}
 
 
 
@@ -336,38 +337,3 @@ void Set_DCO_using32kHz(void)                          // Set DCO to selected fr
     BCSCTL1 &= ~DIVA_3;                       // ACLK = LFXT1CLK = 32.768KHz
 }
 
-bool Escritura_ADE795 ( uint8_t alfa){    
-    /*UCAxTXIFG is automatically reset if a character is written to UCAxTXBUF.*/
-    if (IFG2&UCA0TXIFG){ 
-        UCA0TXBUF =alfa;
-        return 1;
-    }
-    return 0;
-}
-
-void ADE_Lectura_1ms_TIMING( uint8_t* a)
-{
-    switch(*(a)){
-        case 0x00: if(Escritura_ADE795(0x35)){*(a)=0x01;}else{*(a)=0x0B;   wellsended=0;} break; //Lectura 35 Escritura CA
-        case 0x05: if(Escritura_ADE795(0x01)){*(a)=0x06;}else{*(a)=0x0B;   wellsended=0;} break; //
-        case 0x0A: if(Escritura_ADE795(0x02)){*(a)=0x0B;wellsended=1;}else{wellsended=0;} break; //
-        //0x8004 2 bytes
-        //case 0x1C: *(a)=0x00;   break;
-        case 0x17: *(a)=0x00; break;
-                                
-        default  : *(a)=*(a)+1; break;
-    }   
-}
-
-void ADE_Interruptor_RX(){
-    
-    if (wellsended){
-        if (auxiliar>1){
-        auxiliar=0;
-        wellsended=0;}
-        DATA_ADE[auxiliar]=UCA0RXBUF;
-        auxiliar++;
-    
-    }
-    else{UCA0RXBUF;auxiliar=0;}
-}

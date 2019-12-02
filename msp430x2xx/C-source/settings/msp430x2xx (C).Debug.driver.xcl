@@ -24,10 +24,6 @@
 
 "--erase_main" 
 
-"--set_putchar_breakpoint" 
-
-"--set_getchar_breakpoint" 
-
 "--derivative" 
 
 "MSP430F2618" 

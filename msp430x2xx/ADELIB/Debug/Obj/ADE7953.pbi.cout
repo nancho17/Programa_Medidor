@@ -1,18 +1,10 @@
-"C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\C-source\msp430x2xx_fet_1.c"
+"C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\C-extras\ADE7953.c"
 -std=c99
 -ferror-limit=100
--I
-C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\C-extras
--I
-C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc\dlib\c
 -I
 C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc\dlib
 -I
 C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc
--I
-C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc\dlib\c
--I
-C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\C-extras
 -I
 C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc\dlib\c
 -D__MSP430F2618__=1
