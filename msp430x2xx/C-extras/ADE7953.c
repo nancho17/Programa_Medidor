@@ -25,22 +25,22 @@ void ADE_Lectura_1ms_TIMING( uint8_t* a)
 {
     switch(*(a)){
         case 0x00: if(Escritura_ADE795(0x35)){*(a)=0x01;}else{*(a)=0x0B;   wellsended=0;} break; //Lectura 35 Escritura CA
-        case 0x02: if(Escritura_ADE795(0x01)){*(a)=0x03;}else{*(a)=0x0B;   wellsended=0;} break; //
-        case 0x04: if(Escritura_ADE795(0x02)){*(a)=0x05;wellsended=1;}else{wellsended=0;} break; //
+        case 0x05: if(Escritura_ADE795(0x00)){*(a)=0x06;}else{*(a)=0x0B;   wellsended=0;} break; //
+        case 0x0A: if(Escritura_ADE795(0xFF)){*(a)=0x0B;wellsended=1;}else{wellsended=0;} break; //
         //0x8004 2 bytes
         //case 0x1C: *(a)=0x00;   break;
-        case 0x11: *(a)=0x00; break;
+        case 0x17: *(a)=0x00; break;
                                 
         default  : *(a)=*(a)+1; break;
     }   
 }
 
 void ADE_Lectura_0ms5_TIMING( uint8_t* a)
-{
+{//ZXTOUT x100
     switch(*(a)){
         case 0x00: if(Escritura_ADE795(0x35)){*(a)=0x01;}else{*(a)=0x0B;   wellsended=0;} break; //Lectura 35 Escritura CA
         case 0x05: if(Escritura_ADE795(0x00)){*(a)=0x06;}else{*(a)=0x0B;   wellsended=0;} break; //
-        case 0x0A: if(Escritura_ADE795(0xFD)){*(a)=0x0B;wellsended=1;}else{wellsended=0;} break; //
+        case 0x0A: if(Escritura_ADE795(0xFF)){*(a)=0x0B;wellsended=1;}else{wellsended=0;} break; //
         //0x8004 2 bytes
         //case 0x1C: *(a)=0x00;   break;
         case 0x17: *(a)=0x00; break;

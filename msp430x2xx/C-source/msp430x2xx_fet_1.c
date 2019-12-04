@@ -73,9 +73,11 @@ void Time_Handler_1(void)
         tick_500ms_elapsed = true; //500ms
         ms_ticks=0;
         }
-    CCR0+=8000;//0.250 ms 2000
-               //0.125 ms 1000
-               //0.0625 ms 500
+    CCR0+=8000;//1.000  ms 16000
+               //0.500  ms  8000
+               //0.250  ms  4000
+               //0.125  ms  2000
+               //0.0625 ms  1000
                
                 
     
@@ -119,7 +121,9 @@ __interrupt void Timer_A_1 (void){
 #pragma vector=USCIAB0RX_VECTOR
 __interrupt void USCI0RX_ISR(void){
     LPM1_EXIT;
+    if(auxiliar>2){auxiliar=0;}
     DATA_ADE[auxiliar]=ADE_Interruptor_RX(auxiliar);
+    auxiliar++;
 }
 
 
@@ -191,13 +195,13 @@ int main(void)
           //P4OUT ^= 0xFF;
           //0x318 
           //V, (R) Default: 0x000000, Signed,Instantaneous voltage
-            ADE_Lectura_0ms5_TIMING(&a);
-         //   ADE_Lectura_1ms_TIMING(&a);  
-            if(auxiliar==2){
+           ADE_Lectura_0ms5_TIMING(&a);
+           //ADE_Lectura_1ms_TIMING(&a);  
+            if(auxiliar>2){
             ReadedADE[0]=DATA_ADE[0];
             ReadedADE[1]=DATA_ADE[1];
             //ReadedADE[2]=DATA_ADE[2];
-            auxiliar=4;
+            auxiliar=3;
             }
             tick_0ms5_elapsed  = false; // Reset the flag (signal 'handled')
         
@@ -238,8 +242,11 @@ void UART0_P3_config (void){
   
     P3SEL = 0x30;                           // P3.4,5 = USCI_A0 TXD/RXD
     UCA0CTL1 |= UCSSEL0;//ACLK   //UCSSEL_2;                   // SMCLK
-    //UCA0CTL0=0;                         //LSB first, 8-bit data, Parity disabled        0x0060
+    UCA0CTL0=0;                         //LSB first, 8-bit data, Parity disabled        0x0060
+    //UCA0CTL0=UCMSB;                      //MSB first, 8-bit data, Parity disabled
+    //UCA0CTL0=UCPEN;                         //LSB first, 8-bit data, Parity enabled 
     
+ 
     UCA0BR0 = 208;                          // 16 MHz 4800
     UCA0BR1 = 0;                            // 16 MHz 4800     
     UCA0MCTL=  UCBRF_5 +UCOS16;             // Modln UCBRSx=0, over sampling
