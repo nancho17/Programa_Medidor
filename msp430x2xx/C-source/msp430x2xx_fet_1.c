@@ -7,7 +7,7 @@
 //                MSP430x2xx
 //             -----------------
 //         /|\|              XIN|--
-//          | |                 | 16MHz
+//          | |                 |     32768 Hz   
 //          --|RST          XOUT|--
 //            |                 |
 //            |                 |
@@ -45,7 +45,7 @@ static volatile uint32_t ms_ticks = 0;
 static volatile uint32_t ms4_ticks = 0;
 
 static volatile bool tick_0ms5_elapsed = false;
-//static volatile bool tick_1ms_elapsed = false;
+static volatile bool tick_1ms_elapsed = false;
 static volatile bool tick_500ms_elapsed = false;
 static volatile bool tick_200ms_elapsed = false;
 static volatile bool tick_100ms_elapsed = false;
@@ -67,18 +67,21 @@ uint8_t auxiliar=0;
 void Time_Handler_1(void)
 {
     ms_ticks++;
-    tick_0ms5_elapsed = true;  //1ms
+    tick_0ms5_elapsed = true;
 
-    if (ms_ticks > 999 ) {
+
+    if (ms_ticks > 499 ) {
         tick_500ms_elapsed = true; //500ms
         ms_ticks=0;
         }
-    CCR0+=8000;//1.000  ms 16000
-               //0.500  ms  8000
-               //0.250  ms  4000
-               //0.125  ms  2000
-               //0.0625 ms  1000
-               
+   
+               //0,9765625  ms 32 
+               //1,0070800  ms 33
+               //2,0141601  ms  66
+               //4,0283203  ms 132
+               //8,0566406  ms 264
+               //16,113281  ms 528 
+        CCR0+=33;
                 
     
 }
@@ -86,13 +89,13 @@ void Time_Handler_1(void)
 
 void Time_Handler_2(void)
 {
-    ms4_ticks++;
-    tick1_4ms_elapsed = true;  // 4 ms
-    if (ms4_ticks > 249) {
-        tick1_1000ms_elapsed = true; // 1000 ms
-        ms4_ticks=0;
-        }
-    CCR1+=64000;
+    //tick_500ms_elapsed = true;
+    tick1_1000ms_elapsed = true;
+            //  1   s  32768
+            //500  ms  16384
+            //250  ms  8192               
+        
+    CCR1+=32.768;
 }
 
 /*---------Interrupt_Vectors---------*/
@@ -247,9 +250,14 @@ void UART0_P3_config (void){
     //UCA0CTL0=UCPEN;                         //LSB first, 8-bit data, Parity enabled 
     
  
-    UCA0BR0 = 208;                          // 16 MHz 4800
-    UCA0BR1 = 0;                            // 16 MHz 4800     
-    UCA0MCTL=  UCBRF_5 +UCOS16;             // Modln UCBRSx=0, over sampling
+    //UCA0BR0 = 208;                       // 16 MHz 4800
+    //UCA0BR1 = 0;                         // 16 MHz 4800
+
+    UCA0BR0 = 6;                           //  32768 Hz 4800
+    UCA0BR1 = 0;                           //  32768 Hz 4800
+    
+  //  UCA0MCTL=  UCBRF_5 +UCOS16;             // Modln UCBRFx=5 UCBRSx=0, over sampling
+      UCA0MCTL=  UCBRS_7 ;                    // Modln UCBRSx=0
     
     UCA0CTL1 &= ~UCSWRST;                   // **Initialize USCI state machine**
     IE2 |= UCA0RXIE;                        // Enable USCI_A0 RX interrupt //UCA0TXIE para TX
@@ -297,10 +305,12 @@ void Set_DCO_1MHzstored(void){
                              //SMCLK <--  ACKL , SMCLK divider8
                              //The clock division is by 1 if DIVM_0 (x1) is choosen .
     
-    BCSCTL1 &= ~(0x03 << 4);  //ACK divider = 1
-    BCSCTL1 |= XTS;  //XTS High frecuency
-    BCSCTL3 = 0x00;
-    BCSCTL3 |= LFXT1S_2 + XCAP_0; /* Mode 2 for LFXT1 : 3- to 16-MHz crystal or resonator */
+    
+    //BCSCTL1 &= ~(0x03 << 4);  //ACK divider = 1
+   // BCSCTL1 |= XTS;  //XTS High frecuency
+    
+    //BCSCTL3 = 0x00;
+    //BCSCTL3 |= LFXT1S_2 + XCAP_0; /* Mode 2 for LFXT1 : 3- to 16-MHz crystal or resonator */
     
 }
 
