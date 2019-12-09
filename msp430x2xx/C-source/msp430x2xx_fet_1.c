@@ -198,8 +198,8 @@ int main(void)
           //P4OUT ^= 0xFF;
           //0x318 
           //V, (R) Default: 0x000000, Signed,Instantaneous voltage
-           ADE_Lectura_0ms5_TIMING(&a);
-           //ADE_Lectura_1ms_TIMING(&a);  
+           //ADE_Lectura_0ms5_TIMING(&a);
+           ADE_Lectura_1ms_TIMING(&a);  
             if(auxiliar>2){
             ReadedADE[0]=DATA_ADE[0];
             ReadedADE[1]=DATA_ADE[1];
