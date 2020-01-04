@@ -126,8 +126,8 @@ __interrupt void Timer_A_1 (void){
 #pragma vector=USCIAB0RX_VECTOR
 __interrupt void USCI0RX_ISR(void){
     LPM1_EXIT;
-    if(auxiliar>2){auxiliar=0;}
-    DATA_ADE[auxiliar]=ADE_Interruptor_RX(auxiliar);
+    if(auxiliar>4){auxiliar=0;}
+    DATA_ADE[auxiliar]=UCA0RXBUF;
     auxiliar++;
 }
 
@@ -151,13 +151,13 @@ int main(void)
    // P5DIR |= 0x78;                            // P5.6,5,4,3 outputs
     //P5SEL |= 0x70;                            // P5.6,5,4 options
     
-    for (int a=0;a<2;a=a+1)
+    for (int r=0;r<2;r=r+1)
     {
         P4OUT ^= 0xFF;                      // Toggle P1.0 using exclusive-OR
         __delay_cycles(50000);
         
     }
-        for (int a=0;a<2;a=a+1)
+        for (int r=0;r<2;r=r+1)
     {
         P4OUT ^= 0xFF;                      // Toggle P1.0 using exclusive-OR
         __delay_cycles(500000);
@@ -186,9 +186,10 @@ int main(void)
     
     uint8_t a=0x00; //Uart 3 data
     
-    uint8_t ReadedADE[3];
-    ReadedADE[0]=7;
+    uint8_t TablaDatos[5];
+   
     auxiliar=0;
+    int be=0x01;
     
      
     __bis_SR_register(GIE);       //interrupt
@@ -198,14 +199,25 @@ int main(void)
           
         if ( tick_0ms5_elapsed ) {
           //P4OUT ^= 0xFF;
-          //0x318 
-          //V, (R) Default: 0x000000, Signed,Instantaneous voltage
-           //ADE_Lectura_0ms5_TIMING(&a);
-           ADE_Lectura_1ms_TIMING(&a);  
-           
-           //ReadedADE[0]=DATA_ADE[0];
-           //ReadedADE[1]=DATA_ADE[1];
-           
+             
+          switch(be){
+          case 0x01:
+              TablaDatos[0]=DATA_ADE[0];
+              break;
+          case 0x02:
+              TablaDatos[1]=DATA_ADE[0];
+              TablaDatos[2]=DATA_ADE[1];
+              TablaDatos[3]=DATA_ADE[2]; 
+              break;
+              }
+          
+          switch(be){
+          
+          case 0x01:  if (Lector_Dir_8 (Version_8, &a )) { auxiliar =0; be=0x2;};  break;
+          case 0x02:  if (Lector_Dir_24(    V_24,  &a )) { auxiliar =0; be=0x3;};  break;
+          case 500: be=0x01; break;
+          default: be=be+1;     break;  
+          }
             
             tick_0ms5_elapsed  = false; // Reset the flag (signal 'handled')
         
@@ -217,12 +229,20 @@ int main(void)
         }
         
         if (tick_500ms_elapsed) {
-            P4OUT^= 0xF0;
+            uint32_t Voltaje_Medido;
+            Voltaje_Medido = (((uint32_t) TablaDatos[1] << 16) + ((uint32_t) TablaDatos[2] << 8) + (uint32_t) TablaDatos[3]);
+      
+            /* Mayor que +250 mV  */
+            if(Voltaje_Medido>(0xC00)){
+                P6OUT|= 0x01;}
+            else {
+                P6OUT&= ~0x01;}
+            
             tick_500ms_elapsed = false; // Reset the flag (signal 'handled')
         }
 
         if (tick1_1000ms_elapsed) {
-            P4OUT^= 0x0F;
+            P6OUT^= 0x02;
             
             tick1_1000ms_elapsed = false; // Reset the flag (signal 'handled')
         }

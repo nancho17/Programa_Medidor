@@ -52,7 +52,7 @@ void ADE_Lectura_0ms5_TIMING( uint8_t* a)
 uint8_t ADE_Interruptor_RX(int auxiliar){
     
     if (wellsended){
-        wellsended=0;
+        //wellsended=0;
         return UCA0RXBUF;
     }
     else{UCA0RXBUF;
@@ -70,23 +70,51 @@ uint8_t Direccion_Byte (int dir, uint8_t posbyte )
 // Frame delay is 2.08 ms Max delay 4 ms
 // 1,0070800 + 1,0070800 2,014
 // 1,0070800 + 2,014     3,021
-
-int Lector_Dir_16(uint16_t direccionn)
+ 6 1 2 2 2 6
+   13
+     19
+int Lector_Dir_24(uint16_t direccionn, uint8_t* a)//24
 {
    switch(*(a)){
-        case 0x00: if(Escritura_ADE795(0x35)){*(a)=0x01;}else{*(a)=0x0B;   wellsended=0;} break; //Lectura 35  Escritura CA
-        case 0x03: if(Escritura_ADE795(Direccion_Byte(direccionn,1) ) ){*(a)=0x04;}else{*(a)=0x0B;   wellsended=0;} break; //
-        case 0x06: if(Escritura_ADE795(Direccion_Byte(direccionn,0) ) ){*(a)=0x0B;wellsended=1;}else{wellsended=0;} break; //
+        case 0x00: if(Escritura_ADE795(0x35)){*(a)=0x01;}else{*(a)=0x07;   wellsended=0;} break; //Lectura 35  Escritura CA
+        case 0x03: if(Escritura_ADE795(Direccion_Byte(direccionn,1) ) ){*(a)=0x04;}else{*(a)=0x07;   wellsended=0;} break; //
+        case 0x06: if(Escritura_ADE795(Direccion_Byte(direccionn,0) ) ){*(a)=0x07;wellsended=1;}else{wellsended=0;} break; //
 
-   case 0x17: *(a)=0x00; break;
+        case 0x13: *(a)=0x00; return 1; break;
                                 
         default  : *(a)=*(a)+1; break;
     }
-    
-  
-
-
+return 0;
 }
+
+int Lector_Dir_8(uint16_t direccionn, uint8_t* a)
+{
+   switch(*(a)){
+        case 0x00: if(Escritura_ADE795(0x35)){*(a)=0x01;}else{*(a)=0x07;   wellsended=0;} break; //Lectura 35  Escritura CA
+        case 0x03: if(Escritura_ADE795(Direccion_Byte(direccionn,1) ) ){*(a)=0x04;}else{*(a)=0x07;   wellsended=0;} break; //
+        case 0x06: if(Escritura_ADE795(Direccion_Byte(direccionn,0) ) ){*(a)=0x07;wellsended=1;}else{wellsended=0;} break; //
+
+        case 0x0F: *(a)=0x00; return 1; break;
+                                
+        default  : *(a)=*(a)+1; break;
+    }
+return 0;
+}
+
+int Lector_Dir_16(uint16_t direccionn, uint8_t* a)
+{
+   switch(*(a)){
+        case 0x00: if(Escritura_ADE795(0x35)){*(a)=0x01;}else{*(a)=0x07;   wellsended=0;} break; //Lectura 35  Escritura CA
+        case 0x03: if(Escritura_ADE795(Direccion_Byte(direccionn,1) ) ){*(a)=0x04;}else{*(a)=0x07;   wellsended=0;} break; //
+        case 0x06: if(Escritura_ADE795(Direccion_Byte(direccionn,0) ) ){*(a)=0x07;wellsended=1;}else{wellsended=0;} break; //
+
+        case 0x11: *(a)=0x00; return 1; break;
+                                
+        default  : *(a)=*(a)+1; break;
+    }
+return 0;
+}
+
 //uint32_t ADE7953::i2cAlgorithm32_read(byte MSB, byte LSB)
 /*Armar Funcion lectora con MSB y LSB*/
 //
