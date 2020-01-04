@@ -70,9 +70,6 @@ uint8_t Direccion_Byte (int dir, uint8_t posbyte )
 // Frame delay is 2.08 ms Max delay 4 ms
 // 1,0070800 + 1,0070800 2,014
 // 1,0070800 + 2,014     3,021
- 6 1 2 2 2 6
-   13
-     19
 int Lector_Dir_24(uint16_t direccionn, uint8_t* a)//24
 {
    switch(*(a)){

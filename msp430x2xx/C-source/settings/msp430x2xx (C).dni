@@ -75,6 +75,10 @@ ShowTimeLog=1
 [TermIOLog]
 LoggingEnabled=_ 0
 LogFile=_ ""
+[Log file]
+LoggingEnabled=_ 0
+LogFile=_ ""
+Category=_ 0
 [Breakpoints]
 Bp0=_ "Range" "Memory:0x2E" 0 "0x2f" 0 18 0 1 0 0 0 0 0 0
 Bp1=_ "Range" "Memory:0x2E" 0 "0x2f" 0 18 0 1 0 0 0 0 0 0
@@ -100,10 +104,6 @@ SP=0
 SR=0
 all registers=0
 File name=
-[Log file]
-LoggingEnabled=_ 0
-LogFile=_ ""
-Category=_ 0
 [Aliases]
 Count=0
 SuppressDialog=0

@@ -213,11 +213,11 @@ extern uint8_t ADE_Interruptor_RX( int );
 
 extern bool Escritura_ADE795 ( uint8_t );
 
-extern int Lector_Dir_24(uint16_t , uint8_t* a);
+extern int Lector_Dir_24(uint16_t , uint8_t* );
 
-extern int Lector_Dir_16(uint16_t , uint8_t* a);
+extern int Lector_Dir_16(uint16_t , uint8_t* );
 
-extern int Lector_Dir_8(uint16_t , uint8_t* a);
+extern int Lector_Dir_8(uint16_t , uint8_t* );
 
 int get_wellsended(void);
 
