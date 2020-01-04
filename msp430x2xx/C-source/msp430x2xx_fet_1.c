@@ -75,6 +75,8 @@ void Time_Handler_1(void)
         ms_ticks=0;
         }
    
+               //0,48828125 ms 16
+               //0,5187988  ms 17
                //0,9765625  ms 32 
                //1,0070800  ms 33
                //2,0141601  ms  66
@@ -200,12 +202,11 @@ int main(void)
           //V, (R) Default: 0x000000, Signed,Instantaneous voltage
            //ADE_Lectura_0ms5_TIMING(&a);
            ADE_Lectura_1ms_TIMING(&a);  
-            if(auxiliar>2){
-            ReadedADE[0]=DATA_ADE[0];
-            ReadedADE[1]=DATA_ADE[1];
-            //ReadedADE[2]=DATA_ADE[2];
-            auxiliar=3;
-            }
+           
+           //ReadedADE[0]=DATA_ADE[0];
+           //ReadedADE[1]=DATA_ADE[1];
+           
+            
             tick_0ms5_elapsed  = false; // Reset the flag (signal 'handled')
         
         }

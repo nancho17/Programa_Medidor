@@ -52,17 +52,10 @@ void ADE_Lectura_0ms5_TIMING( uint8_t* a)
 uint8_t ADE_Interruptor_RX(int auxiliar){
     
     if (wellsended){
-        if (auxiliar>3){
-        auxiliar=0;
-        wellsended=0;}else{
-        auxiliar++;}
-        
+        wellsended=0;
         return UCA0RXBUF;
-        
-    
     }
     else{UCA0RXBUF;
-    auxiliar=0;
     return 0;
     }
 }
@@ -74,19 +67,18 @@ uint8_t Direccion_Byte (int dir, uint8_t posbyte )
   return a;
 }
 
+// Frame delay is 2.08 ms Max delay 4 ms
+// 1,0070800 + 1,0070800 2,014
+// 1,0070800 + 2,014     3,021
+
 int Lector_Dir_16(uint16_t direccionn)
 {
-  Direccion_Byte(direccionn,0);
-  Direccion_Byte(direccionn,1);
-  
-    
    switch(*(a)){
-        case 0x00: if(Escritura_ADE795(0x35)){*(a)=0x01;}else{*(a)=0x0B;   wellsended=0;} break; //Lectura 35 Escritura CA
-        case 0x05: if(Escritura_ADE795(0x00)){*(a)=0x06;}else{*(a)=0x0B;   wellsended=0;} break; //
-        case 0x0A: if(Escritura_ADE795(0xFF)){*(a)=0x0B;wellsended=1;}else{wellsended=0;} break; //
-        //0x8004 2 bytes
-        //case 0x1C: *(a)=0x00;   break;
-        case 0x17: *(a)=0x00; break;
+        case 0x00: if(Escritura_ADE795(0x35)){*(a)=0x01;}else{*(a)=0x0B;   wellsended=0;} break; //Lectura 35  Escritura CA
+        case 0x03: if(Escritura_ADE795(Direccion_Byte(direccionn,1) ) ){*(a)=0x04;}else{*(a)=0x0B;   wellsended=0;} break; //
+        case 0x06: if(Escritura_ADE795(Direccion_Byte(direccionn,0) ) ){*(a)=0x0B;wellsended=1;}else{wellsended=0;} break; //
+
+   case 0x17: *(a)=0x00; break;
                                 
         default  : *(a)=*(a)+1; break;
     }
