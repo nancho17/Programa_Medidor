@@ -205,27 +205,30 @@ extern "C"
 #include "stdbool.h"
 #include "msp430.h"  
   
-extern void ADE_Lectura_1ms_TIMING( uint8_t* );
-
-extern void ADE_Lectura_0ms5_TIMING( uint8_t* );
+/* Varias*/
+uint8_t Direccion_Byte (int , uint8_t );
 
 extern uint8_t ADE_Interruptor_RX( int );
 
 extern bool Escritura_ADE795 ( uint8_t );
-
-extern int Lector_Dir_24(uint16_t , uint8_t* );
-
-extern int Lector_Dir_16(uint16_t , uint8_t* );
-
-extern int Lector_Dir_8(uint16_t , uint8_t* );
 
 int get_wellsended(void);
 
 void set_wellsended(int);
 
 
+int Escritor_Dir_8(uint16_t direccionn, uint8_t dato, uint8_t* a);
+
+int Escritor_Dir_16(uint16_t direccionn, uint16_t dato, uint8_t* a);
+
+int Escritor_Dir_24(uint16_t direccionn, uint32_t dato, uint8_t* a);
 
 
+extern int Lector_Dir_24(uint16_t , uint8_t* );
+
+extern int Lector_Dir_16(uint16_t , uint8_t* );
+
+extern int Lector_Dir_8(uint16_t , uint8_t* );
 
 #ifdef __cplusplus
 }

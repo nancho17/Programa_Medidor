@@ -1130,6 +1130,9 @@
     </settings>
   </configuration>
   <file>
+    <name>$PROJ_DIR$\..\C-extras\ADE7953.c</name>
+  </file>
+  <file>
     <name>$PROJ_DIR$\..\C-extras\ADE7953.h</name>
   </file>
   <file>

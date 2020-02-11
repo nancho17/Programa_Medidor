@@ -26,15 +26,43 @@
 #include "stdbool.h"
 #include "ADE7953.h"
 
+/*---------Custom_Pin_Functions----------*/
+
+//P1
+#define MX_SHUTDOWN		(0x40)  //active low
+#define MX_ENABLE 		(0x80)  //active low
+
+//P2
+#define ISL_R_ENABLE	(0x40)  //active low
+#define ISL_D_ENABLE	(0x80)
+
+//P3
+#define ON_PCB_RELE 	(0x02)
+#define ADE_RESET 		(0x04)
+#define ADE_IRQ 		(0x08)  // no conectado
+#define ADE_RX 			(0x10)
+#define ADE_TX 			(0x20)
+#define SERIAL_DIN 		(0x40)
+#define SERIAL_ROUT 	(0x80)
+
+//P6
+#define LED_V1		 	(0x01)
+#define LED_V2  		(0x02)
+#define SALIDA_DAC 		(0x40)
+
 /*---------Task_Time_Definitions---------*/
 #define TAREA_ADE       100   // Valor en ms
 #define TAREA_MODBUS    200   // Valor en ms
 #define TAREA_DA        500   // Valor en ms
 
+
 /*---------Functions_Declarations---------*/
 void Set_DCO_using32kHz(void);
 void Set_DCO_1MHzstored(void);
 void UART0_P3_config (void);
+bool RS232_send ( uint8_t);
+void Send_Text ( char*);
+int numero_input( void);
 //bool Escritura_ADE795 ( uint8_t); 
 //void Lectura_ADE795 ( void);
 //void ADE_Lectura_1ms_TIMING(uint8_t*);
@@ -42,62 +70,72 @@ void UART0_P3_config (void);
 
 /*---------NO_Optimized_Variables---------*/
 static volatile uint32_t ms_ticks = 0;
-static volatile uint32_t ms4_ticks = 0;
+static volatile uint32_t ms2_ticks = 0;
 
-static volatile bool tick_0ms5_elapsed = false;
 static volatile bool tick_1ms_elapsed = false;
+
 static volatile bool tick_500ms_elapsed = false;
 static volatile bool tick_200ms_elapsed = false;
 static volatile bool tick_100ms_elapsed = false;
 
-static volatile bool tick1_4ms_elapsed = false;
-static volatile bool tick1_1000ms_elapsed = false;
+static volatile bool tick_10s_elapsed = true;
+
 
 /*---------Global_Variables---------*/
 
-bool wellsended = false;
+static uint8_t DATA_ADE[3]; // Buffer RX0
 
-uint8_t DATA_ADE[3];
+double E_Acumulator=0;		// Variable para almacenar datos de energía medida (En Joules)
 
-uint8_t auxiliar=0;
+uint8_t TablaDatos[47];  	// Tabla con datos de los registros del ADE7953ade
+
+uint8_t auxiliar=0;			// Manejo de RX0
+
+uint8_t auxiliar2=0;		// Manejo de RX1
+
+uint8_t aux_menu=0;			// Manejo menu RX1
+
+uint8_t AuxBuffer[16];  	// Buffer consola serial
 
 
+/*Funcion que maneja la interrucpion del tmer 0*/
 
-/* (1/32768)s=0,00003051757812s -> (1/f)* 33 s =1,007080078125 ms */
+void Ten_Second_Waiter(void)
+{
+    ms_ticks++;
+   if (ms_ticks > 9 ) {
+        tick_10s_elapsed = false; 
+        ms_ticks=0;
+        }
+   
+        CCR0+=32768; // El timer interrumpe cada 1 s
+}
+
 void Time_Handler_1(void)
 {
     ms_ticks++;
-    tick_0ms5_elapsed = true;
-
+    tick_1ms_elapsed = true;
 
     if (ms_ticks > 499 ) {
         tick_500ms_elapsed = true; //500ms
         ms_ticks=0;
         }
    
-               //0,48828125 ms 16
-               //0,5187988  ms 17
-               //0,9765625  ms 32 
-               //1,0070800  ms 33
-               //2,0141601  ms  66
-               //4,0283203  ms 132
-               //8,0566406  ms 264
-               //16,113281  ms 528 
-        CCR0+=33;
-                
-    
+        CCR0+=36; // El timer interrumpe cada 1,0986328 ms
 }
 
-
+/*Funcion que maneja la interrucpion del tmer 1*/
 void Time_Handler_2(void)
 {
-    //tick_500ms_elapsed = true;
-    tick1_1000ms_elapsed = true;
-            //  1   s  32768
-            //500  ms  16384
-            //250  ms  8192               
+  	ms2_ticks++;
+	tick_100ms_elapsed = true;
+  
+	if (ms2_ticks > 1 ) {
+        tick_200ms_elapsed = true; //200 ms
+        ms2_ticks=0;
+    }
         
-    CCR1+=32.768;
+    CCR1+=3276; // El timer interrumpe cada 100 ms
 }
 
 /*---------Interrupt_Vectors---------*/
@@ -105,7 +143,8 @@ void Time_Handler_2(void)
 __interrupt void Timer_A_0(void){
   
   LPM1_EXIT;
-  Time_Handler_1();
+  if(tick_10s_elapsed){  Ten_Second_Waiter(); }
+  else{  Time_Handler_1(); }
 
 }
 
@@ -123,128 +162,587 @@ __interrupt void Timer_A_1 (void){
     }
 }
 
+// Manejo interrupción RX0
 #pragma vector=USCIAB0RX_VECTOR
-__interrupt void USCI0RX_ISR(void){
+__interrupt void USCI0RX_ISR(void)
+{
     LPM1_EXIT;
-    if(auxiliar>4){auxiliar=0;}
+    if(auxiliar>2){auxiliar=0;}
     DATA_ADE[auxiliar]=UCA0RXBUF;
     auxiliar++;
 }
 
+// Manejo interrupción RX1
+#pragma vector=USCIAB1RX_VECTOR
+__interrupt void USCI1RX_ISR(void)
+
+{
+  LPM1_EXIT;
+  while (!(UC1IFG&UCA1TXIFG));               // USCI_A1 TX buffer ready?
+  aux_menu=UCA1RXBUF;
+  if(auxiliar2>15){auxiliar=0;}
+  AuxBuffer[auxiliar2]=aux_menu;
+  UCA1TXBUF = aux_menu;                     // TX -> RXed character
+  auxiliar2++;
+}
 
 
-
-
+/*Main Function*/
 int main(void)
-{   DATA_ADE[0]=0;
-    DATA_ADE[1]=0;
-    DATA_ADE[2]=0;
+{
     WDTCTL = WDTPW+WDTHOLD;               // Stop watchdog timer
-    for (int i = 0; i < 0xfffe; i++);             // Delay for XTAL stabilization
+    for (int i = 0; i < 0xfffe; i++);     // Delay for XTAL stabilization
      
     Set_DCO_1MHzstored();
-//    Set_DCO_using32kHz();
-    
-    P4DIR |= 0xFF;                        // Set P2.0 to output direction
+	
+	
+	/*Configuracion de Pines*/
+	P4DIR |= 0xFF;                       // Set P2.0 to output direction
     P4OUT = 0x00;
-    
-   // P5DIR |= 0x78;                            // P5.6,5,4,3 outputs
-    //P5SEL |= 0x70;                            // P5.6,5,4 options
-    
+	P3SEL &=0x00;  
+	P3DIR |= 0x0F;
+	P3OUT= ADE_RESET;
+	UART0_P3_config();
+	P2DIR |= 0xC0;
+	P2OUT = 0x40;
+	P1DIR |= 0xC0;
+	P1OUT = 0x40;
+
+	/*Delay*/
     for (int r=0;r<2;r=r+1)
     {
         P4OUT ^= 0xFF;                      // Toggle P1.0 using exclusive-OR
         __delay_cycles(50000);
         
     }
-        for (int r=0;r<2;r=r+1)
-    {
-        P4OUT ^= 0xFF;                      // Toggle P1.0 using exclusive-OR
-        __delay_cycles(500000);
-        
-    }
     
-    //P1DIR |= 0x01;                            // P1.0 output
-    //CCR0 =16000; //65535; 1 ms
-    CCR0 =48; //65535; 0.250 ms
-    
-    CCR1 =16; //65535; 4 ms
+	/*Seteo e inicio de los timers*/
+	CCR0 =48; //65535; 0.250 ms
+    CCR1 =15; //65535; 4 ms
     
     CCTL0=0;
     CCTL1=0;
     
     CCTL0 = CCIE;       // CCR0 interrupt enabled + compare mode
-    CCTL1 = CCIE;       // CCR1 interrupt enabled + compare mode
     
     
-    //TACTL = TASSEL_2 + MC_2;                 // SMCLK, contmode
     TACTL = TASSEL_1 + MC_2+TAIE;              // ACLK, contmode,TAIFG interrupt request
-    //TACTL = TASSEL_2 + MC_1;                 // SMCLK, upmode
-    //TACTL = TASSEL_1 + MC_1+ TAIE;           // ACLK, upmode, TAIFG interrupt request
-   
-    UART0_P3_config();
     
-    uint8_t a=0x00; //Uart 3 data
     
-    uint8_t TablaDatos[5];
-   
-    auxiliar=0;
-    int be=0x01;
-    
-     
-    __bis_SR_register(GIE);       //interrupt
-  /*Entra en el bucle de las tasks*/
-    while (1) //milisecond controlled Loop
+    uint8_t TablaTemporal[47];
+	
+	
+	auxiliar=0;		//contador para la recepcion en UART0
+    int be=55;     	//contador para la tabla de datos
+	
+	bool flag_0= false;			//Bandera del menu serie
+	bool flag_1= true;			//Manejo de submenus serie
+
+	uint8_t menu_switch=0;	//Posiciones del menu serie
+     	
+    __bis_SR_register(GIE);       //interrupt enable
+
+	float LazoCorriente =0x00; //Variable a enviar al lazo de corriente
+	
+ //Iniciar timer	
+/////////////*			Serial en 10 segundos previos			*/////////////
+
+	/*Menu*/
+	char salto1 []="\n\n";
+
+	char m1 []="Menu Principal\n";
+	char m2 []="1.Editar Resistencias\n ";
+	char m3 []="2.Editar offset\n ";
+	char m4 []="3.Editar registros de ganancia\n";
+	char m5 []="4.Variable de salida de lazo de corriente\n";
+	char m6 []="5.Accion de relé\n";
+	char m7 []="6.Activar Modbus/Desactivar com 232\n";
+	char salida []="Q.Salir\n";
+	
+
+	char m2_1[]="1.Resistores de VP - VN\n";
+	char m2_2[]="2.Resistor Shunt\n";
+	
+	char m3_1[]="1.Offset Vp - Vn\n";
+	char m3_2[]="2.Offset Shunt\n";
+	
+	char m4_1[]="1.Editar PGA_IA\n";
+	char m4_2[]="2.Editar PGA_V\n";
+	//char m4_3[]="Gain Full-Scale(mV) PGA_IA[2:0] PGA_V[2:0] \n 2    ±250           001         001 \n 4    ±125           010         010\n";
+	char m4_101[]="Elija ganancia para PGA_IA\n";
+	char m4_102[]="Elija ganancia para PGA_V\n";
+	char m4_00[]="1. Ganancia 1  = Fondo de escala ±500   mV\n";
+	char m4_01[]="2. Ganancia 2  = Fondo de escala ±250   mV\n";
+	char m4_02[]="3. Ganancia 4  = Fondo de escala ±125   mV\n";
+	char m4_03[]="4. Ganancia 8  = Fondo de escala ±62.5  mV\n";
+	char m4_04[]="5. Ganancia 16 = Fondo de escala ±31.25 mV\n";
+	char m4_05[]="6. Ganancia 22 = Fondo de escala ±22.7  mV\n";
+	
+	
+	char m5_0 []="Elegir Variable Proporcional\n";
+	char m5_1 []="1.Vrms\n";
+	char m5_2 []="2.Irms\n";
+	char m5_3 []="3.Voltaje Pico\n";
+	
+	char m6_0 []="Rele se acciona por:\n";
+	char m6_1 []="1.Sobre tensioncorriente\n";
+	char m6_2 []="2.Sobre corriente\n";
+	char m6_3 []="3.Sub tension\n";
+	
+	char m8[]="Insertar valor\n";
+	char m813[]="Insertar valor en Ohms\n";
+	char m814[]="Insertar valor en miliAmperes\n";
+	char m815[]="Insertar valor en Volts\n";
+	char m816[]="Insertar valor en Watts\n";
+	char m9[]="Valor insertado es : ";
+	char m10[]="0.Volver\n";
+	char m011[]="y.Aceptar\n";
+	char m012[]="Valor actual es : ";
+	char m013[]=" Ohms";
+	char m014[]=" miliAmperes";
+	char m015[]=" Volts";
+	char m016[]=" Watts";
+	char m017[]="Cancelado\n";
+	
+	
+	
+	
+	while (tick_10s_elapsed) {// con un timer tick_10s_elapsed=0;
+		for (int r=0;r<14;r=r+1){
+			if(AuxBuffer[r]=='c' || AuxBuffer[r]=='C'){
+				if(AuxBuffer[r+1]=='f' || AuxBuffer[r+1]=='F'){
+					if(AuxBuffer[r+2]=='g' || AuxBuffer[r+2]=='G'){flag_0=true; tick_10s_elapsed=false;}
+				}
+			}
+		}
+	  
+	}
+
+	int Tolstoi=0;
+	int Orwell[16];
+	
+	while (flag_0) {// con un flag
+		
+	switch(menu_switch){
+		case 0:
+		  if(flag_1){
+			Send_Text(salto1);
+			Send_Text(m1);Send_Text(m2);
+			Send_Text(m3);Send_Text(m4);
+			Send_Text(m5);Send_Text(m6);
+			Send_Text(salida);
+			flag_1=0;}
+		  
+		  if(aux_menu=='0'){menu_switch=0; flag_1=1; aux_menu=0;}
+		  if(aux_menu=='1'){menu_switch=1; flag_1=1; aux_menu=0;}
+		  if(aux_menu=='2'){menu_switch=2; flag_1=1; aux_menu=0;}
+		  if(aux_menu=='3'){menu_switch=3; flag_1=1; aux_menu=0;}
+		  if(aux_menu=='4'){menu_switch=4; flag_1=1; aux_menu=0;}
+		  if(aux_menu=='5'){menu_switch=5; flag_1=1; aux_menu=0;}
+		  if(aux_menu=='q'||aux_menu=='Q'){flag_0=0;}
+		  break;
+		  
+		case 1:
+		  if(flag_1){
+			Send_Text(salto1);
+			Send_Text(m2_1);
+			Send_Text(m2_2);
+			Send_Text(m10);
+								
+			flag_1=0;}
+			if(aux_menu=='0'){menu_switch=0; flag_1=1; aux_menu=0;}
+			if(aux_menu=='1'){menu_switch=11; flag_1=1; aux_menu=0;} 
+			if(aux_menu=='2'){menu_switch=12; flag_1=1; aux_menu=0;} 			
+		  break;
+		  
+		case 11: //Inserte valor, presione * para confirmar q para salir
+		   if(flag_1){
+			Send_Text(salto1);
+			Send_Text(m8);
+			Send_Text(salida);
+			auxiliar2=0;
+			flag_1=0;}
+		   
+			if(aux_menu=='*'){
+			 	Send_Text(m9);
+			  	Tolstoi=numero_input();//Editar resistores para VP-N
+				
+				Send_Text(AuxBuffer);
+				Send_Text(m013);
+				menu_switch=0; 
+				flag_1=1; 
+				aux_menu=0;}
+
+		   if(aux_menu=='q'||aux_menu=='Q'){
+				Send_Text(m017);
+				menu_switch=0; 
+				flag_1=1; 
+				aux_menu=0;}
+		  break;
+		  
+		case 12:
+			if(flag_1){
+			Send_Text(salto1);
+			Send_Text(m8);
+			Send_Text(salida);
+			auxiliar2=0;
+			flag_1=0;}
+		   
+			if(aux_menu=='*'){
+			 	Send_Text(m9);
+			  	Tolstoi=numero_input();//Editar Resistores IA
+				
+				Send_Text(AuxBuffer);
+				Send_Text(m013);
+				menu_switch=0; 
+				flag_1=1; 
+				aux_menu=0;}
+
+		   if(aux_menu=='q'||aux_menu=='Q'){
+				Send_Text(m017);
+				menu_switch=0; 
+				flag_1=1; 
+				aux_menu=0;}
+		  break;
+		
+
+		case 2:
+		  if(flag_1){
+			Send_Text(salto1);
+			Send_Text(m3_1);
+			Send_Text(m3_2);
+			Send_Text(m10);
+								
+			flag_1=0;}
+			if(aux_menu=='0'){menu_switch=0; flag_1=1; aux_menu=0;}
+			if(aux_menu=='1'){menu_switch=21; flag_1=1; aux_menu=0;} 
+			if(aux_menu=='2'){menu_switch=22; flag_1=1; aux_menu=0;} 			
+		  break;
+
+  		case 21:
+			if(flag_1){
+			Send_Text(salto1);
+			Send_Text(m8);
+			Send_Text(salida);
+			auxiliar2=0;
+			flag_1=0;}
+		   
+			if(aux_menu=='*'){
+			 	Send_Text(m9);
+			  	Tolstoi=numero_input();	//Editar un ofset para IVP-N
+				
+				Send_Text(AuxBuffer);
+				
+				menu_switch=0; 
+				flag_1=1; 
+				aux_menu=0;}
+
+		   if(aux_menu=='q'||aux_menu=='Q'){
+				Send_Text(m017);
+				menu_switch=0; 
+				flag_1=1; 
+				aux_menu=0;}
+		break;
+
+		case 22:
+			if(flag_1){
+			Send_Text(salto1);
+			Send_Text(m8);
+			Send_Text(salida);
+			auxiliar2=0;
+			flag_1=0;}
+		   
+			if(aux_menu=='*'){
+			 	Send_Text(m9);
+			  	Tolstoi=numero_input();//Editar un ofset para IAP-N
+				
+				Send_Text(AuxBuffer);
+				
+				menu_switch=0; 
+				flag_1=1; 
+				aux_menu=0;}
+
+		   if(aux_menu=='q'||aux_menu=='Q'){
+				Send_Text(m017);
+				menu_switch=0; 
+				flag_1=1; 
+				aux_menu=0;}
+		break;
+		  
+		  
+
+	case 3:
+		  if(flag_1){
+			Send_Text(salto1);
+			Send_Text(m4_1);
+			Send_Text(m4_2);
+			Send_Text(m10);
+								
+			flag_1=0;}
+			if(aux_menu=='0'){menu_switch=0; flag_1=1; aux_menu=0;}
+			if(aux_menu=='1'){menu_switch=31; flag_1=1; aux_menu=0;}
+			if(aux_menu=='2'){menu_switch=32; flag_1=1; aux_menu=0;}
+	break;
+
+		  
+		  
+	case 31:
+		  if(flag_1){
+			Send_Text(salto1);
+			Send_Text(m4_101);
+			Send_Text(m4_01);
+			Send_Text(m4_02);
+			Send_Text(m4_03);
+			Send_Text(m4_04);
+			Send_Text(m4_05);
+			Send_Text(salida);
+								
+			flag_1=0;}
+		  
+			if(aux_menu=='1'){Send_Text(AuxBuffer);Tolstoi=0;}//Cambiar PGA_IA
+			if(aux_menu=='2'){Send_Text(AuxBuffer);Tolstoi=1;}//
+			if(aux_menu=='3'){Send_Text(AuxBuffer);Tolstoi=2;}//
+			if(aux_menu=='4'){Send_Text(AuxBuffer);Tolstoi=3;}//
+			if(aux_menu=='5'){Send_Text(AuxBuffer);Tolstoi=4;}//
+				
+		   	if(aux_menu=='q'||aux_menu=='Q'){
+				menu_switch=0; 
+				flag_1=1; 
+				aux_menu=0;}
+	break;
+	
+	case 32:
+		if(flag_1){
+
+			Send_Text(salto1);
+			Send_Text(m4_101);
+			Send_Text(m4_00);
+			Send_Text(m4_01);
+			Send_Text(m4_02);
+			Send_Text(m4_03);
+			Send_Text(m4_04);
+			Send_Text(salida);
+
+			flag_1=0;}
+		
+		if(aux_menu=='1'){Send_Text(AuxBuffer);Tolstoi=0;}//Cambiar PGA_V
+			if(aux_menu=='2'){Send_Text(AuxBuffer);Tolstoi=1;}//
+			if(aux_menu=='3'){Send_Text(AuxBuffer);Tolstoi=2;}//
+			if(aux_menu=='4'){Send_Text(AuxBuffer);Tolstoi=3;}//
+			if(aux_menu=='5'){Send_Text(AuxBuffer);Tolstoi=4;}//
+		
+		if(aux_menu=='q'||aux_menu=='Q'){
+				menu_switch=0; 
+				flag_1=1; 
+				aux_menu=0;}
+	break;
+
+		  
+		case 4:
+		  if(flag_1){
+			Send_Text(salto1);
+			Send_Text(m5_0);
+			Send_Text(m5_1);
+			Send_Text(m5_2);
+			Send_Text(m5_3);
+			Send_Text(m10);
+			flag_1=0;}
+
+		  if(aux_menu=='0'){menu_switch=0; flag_1=1; aux_menu=0;}
+		  break;
+
+		  
+		case 5:
+		  if(flag_1){
+			Send_Text(salto1);
+			Send_Text(m6_0);
+			Send_Text(m6_1);
+			Send_Text(m6_2);
+			Send_Text(m6_3);
+			Send_Text(m10);
+								
+			flag_1=0;}
+			if(aux_menu=='0'){menu_switch=0; flag_1=1; aux_menu=0;}
+		  break;
+		  
+		  
+		  
+		}
+	  
+	}
+
+//	tick_100ms_elapsed = false; // Reset the flag (signal 'handled')
+
+	
+	
+	
+	
+/////////////*			Entra en el bucle de las tareas			*/////////////
+	//activo 2do timer
+	CCTL1 = CCIE;       // CCR1 interrupt enabled + compare mode
+	uint8_t a =0x00; //Contador usado en el loop controlado por tiempo
+ 	    
+	while (1) //milisecond controlled Loop
         {
-          
-        if ( tick_0ms5_elapsed ) {
-          //P4OUT ^= 0xFF;
-             
+		  
+/* 		Tarea ADE 		*/		  
+        if ( tick_1ms_elapsed ) {
+       	
+		  switch(auxiliar){
+			  case 1: 
+				TablaTemporal[be]=DATA_ADE[0]; 
+			  	
+				break;
+			  case 2: 
+				TablaTemporal[be]=DATA_ADE[0]; 
+			  	TablaTemporal[be+1]=DATA_ADE[1];
+				
+			  	break;
+			  case 3:  
+				TablaTemporal[be]=DATA_ADE[0]; 
+			  	TablaTemporal[be+1]=DATA_ADE[1]; 
+			  	TablaTemporal[be+2]=DATA_ADE[2]; 
+				break;
+			}
+
+	
+			
           switch(be){
-          case 0x01:
-              TablaDatos[0]=DATA_ADE[0];
-              break;
-          case 0x02:
-              TablaDatos[1]=DATA_ADE[0];
-              TablaDatos[2]=DATA_ADE[1];
-              TablaDatos[3]=DATA_ADE[2]; 
-              break;
-              }
-          
-          switch(be){
-          
-          case 0x01:  if (Lector_Dir_8 (Version_8, &a )) { auxiliar =0; be=0x2;};  break;
-          case 0x02:  if (Lector_Dir_24(    V_24,  &a )) { auxiliar =0; be=0x3;};  break;
-          case 500: be=0x01; break;
-          default: be=be+1;     break;  
+          //Escribo en registros
+		  case 55:	if (Escritor_Dir_8  (PGA_IA_8, 0x01, &a )) {  auxiliar=0; be=0;}; break; 
+			
+          //Leo los registros
+		  case  0:  if (Lector_Dir_8  (LCYCMODE_8    , &a )) {  auxiliar=0; be=1;};  break;
+          case  1:  if (Lector_Dir_8  (LAST_OP_8   , &a )) { auxiliar =0;   be=2;};  break;
+		  case  2:  if (Lector_Dir_8  (PGA_IA_8    , &a )) { auxiliar =0; be=3;};  break;
+		  case  3:  if (Lector_Dir_24 (AP_NOLOAD_24 , &a )) { auxiliar =0; be=6;};  break;
+		  case  6:  if (Lector_Dir_16 (CONFIG_16    , &a )) { auxiliar =0; be=8;};  break;
+		  case  8:  if (Lector_Dir_16 (CFMODE_16    , &a )) { auxiliar =0; be=10;};  break;
+		  
+		  
+		  case 10:  if (Lector_Dir_24 (AVA_24    	, &a )) { auxiliar =0; be=13;};  break;
+		  case 13:  if (Lector_Dir_24 (AWATT_24  	, &a )) { auxiliar =0; be=16;};  break;
+		  case 16:  if (Lector_Dir_24 (AVAR_24  	, &a )) { auxiliar =0; be=19;};  break;
+		  case 19:  if (Lector_Dir_24 (IA_24     	, &a )) { auxiliar =0; be=22;};  break;
+		  case 22:  if (Lector_Dir_24 (V_24      	, &a )) { auxiliar =0; be=25;};  break;
+		  case 25:  if (Lector_Dir_24 (IRMSA_24     , &a )) { auxiliar =0; be=28;};  break;
+		  case 28:  if (Lector_Dir_24 (VRMS_24      , &a )) { auxiliar =0; be=31;};  break;
+		  case 31:  if (Lector_Dir_24 (AENERGYA_24  , &a )) { auxiliar =0; be=34;};  break;
+		  case 34:  if (Lector_Dir_24 (RENERGYA_24  , &a )) { auxiliar =0; be=37;};  break;
+		  case 37:  if (Lector_Dir_24 (APENERGYA_24 , &a )) { auxiliar =0; be=40;};  break;
+		  case 40:  if (Lector_Dir_16 (PFA_16       , &a )) { auxiliar =0; be=42;};  break;
+		  case 42:  if (Lector_Dir_16 (Period_16    , &a )) { auxiliar =0; be=44;};  break;
+		  
+		  case 44:  if (Lector_Dir_24 (VPEAK_24     , &a )) { auxiliar =0; be=47;};  break;		  
+
+		  case 50:  
+		  for (int r=0;r<47;r=r+1)
+		  	{TablaDatos[r]=TablaTemporal[r];}
+		  be=0;
+		  break;
+		  
+          default: be=be+1;   break;  
           }
             
-            tick_0ms5_elapsed  = false; // Reset the flag (signal 'handled')
+            tick_1ms_elapsed  = false; // Reset the flag (signal 'handled')
+		  
         
         }
         
-        if (tick1_4ms_elapsed) {
-            //P4OUT ^= 0xFF;
-            tick1_4ms_elapsed = false; // Reset the flag (signal 'handled')
-        }
-        
-        if (tick_500ms_elapsed) {
-            uint32_t Voltaje_Medido;
-            Voltaje_Medido = (((uint32_t) TablaDatos[1] << 16) + ((uint32_t) TablaDatos[2] << 8) + (uint32_t) TablaDatos[3]);
-      
-            /* Mayor que +250 mV  */
-            if(Voltaje_Medido>(0xC00)){
-                P6OUT|= 0x01;}
+    
+/*		Tarea Serial			*/		
+        if (tick_200ms_elapsed) {
+		  
+           static int32_t Voltaje_Medido, I_Medido, P_Medido, Q_Medido, I_rms,E_Activa,E_Reactiva;
+           static uint32_t Voltaje_rms , Voltaje_pico, kiloWh;
+		   static float Voltaje_Ins_F,Voltaje_rms_F, Voltaje_p_F, Corriente_F, I_rms_F, Pow_F, Q_F;
+		   static float E_Activa_F,E_Reactiva_F;
+		   
+		   static float PF_F;
+		   static int16_t PowerFactor;
+		   //<< 8 * 1 0000 0000 *256
+		   
+		 	Voltaje_Medido = (((uint32_t) TablaDatos[24] << 24) + ((uint32_t) TablaDatos[23] << 16) + ((uint32_t) TablaDatos[22] << 8));
+      		Voltaje_rms    = (((uint32_t) TablaDatos[30] << 24) + ((uint32_t) TablaDatos[29] << 16) + ((uint32_t) TablaDatos[28] << 8));
+			Voltaje_pico   = (((uint32_t) TablaDatos[46] << 24) + ((uint32_t) TablaDatos[45] << 16) + ((uint32_t) TablaDatos[44] << 8));
+			I_Medido   	   = (((uint32_t) TablaDatos[21] << 24) + ((uint32_t) TablaDatos[20] << 16) + ((uint32_t) TablaDatos[19] << 8));
+			I_rms   	   = (((uint32_t) TablaDatos[27] << 24) + ((uint32_t) TablaDatos[26] << 16) + ((uint32_t) TablaDatos[25] << 8));
+			P_Medido   	   = (((uint32_t) TablaDatos[15] << 24) + ((uint32_t) TablaDatos[14] << 16) + ((uint32_t) TablaDatos[13] << 8));
+			Q_Medido   	   = (((uint32_t) TablaDatos[18] << 24) + ((uint32_t) TablaDatos[17] << 16) + ((uint32_t) TablaDatos[16] << 8));
+			E_Activa  	   = (((uint32_t) TablaDatos[33] << 24) + ((uint32_t) TablaDatos[32] << 16) + ((uint32_t) TablaDatos[31] << 8));
+			E_Reactiva     = (((uint32_t) TablaDatos[36] << 24) + ((uint32_t) TablaDatos[35] << 16) + ((uint32_t) TablaDatos[34] << 8));
+						
+			PowerFactor    = (((uint16_t) TablaDatos[41] << 8)  + TablaDatos[40] );
+			
+			Voltaje_Ins_F=(Voltaje_Medido*495.5)/1664000000;
+			//  495.5V ->	6,500,000 *256 32bit			  
+			Voltaje_rms_F=(Voltaje_rms*350.3714100779)/2312193792;    // 353,5 mv rms ->(9032007 24 bit) en chip (9032007*256 =2312193792 32bit)
+						
+			Voltaje_p_F=(Voltaje_pico*495.5)/1664000000; //no encuentro datos en datasheet
+			// 24bit unsigned... 
+			
+			Corriente_F=((float) I_Medido)*2.5/1664000000;  //0.1 ohm 2.5 ampere 0.250mv 
+			
+			I_rms_F=(I_rms*1.7677669529664)/2312193792;    
+			
+			Pow_F=(P_Medido*619.375)/1244774656;    // 619.375 W ? 4862401 LSBs (decimal)
+			
+			Q_F=(Q_Medido*619.375)/1244774656;    // 619.375 VAr ? 4862401 LSBs (decimal)
+			
+			E_Activa_F=E_Activa*(25084.6875/2147483392);// Watt segundo (Joule)
+			
+			E_Reactiva_F=E_Reactiva*(25084.6875/2147483392);// Watt segundo 
+			
+			E_Acumulator=E_Acumulator+E_Activa_F;
+			kiloWh=E_Acumulator/60000;
+			
+			PF_F=((float)PowerFactor)/32767; //32767;
+			
+			//divisor resistivo 991
+			
+			Voltaje_Medido=Voltaje_Ins_F;
+			Voltaje_rms=Voltaje_rms_F;
+	  		Voltaje_pico=Voltaje_p_F;
+			I_Medido=Corriente_F*1000;
+			I_rms=I_rms_F*1000;
+			P_Medido=Pow_F;
+			Q_Medido=Q_F;
+			
+			/*Envio al lazo de corriente*/
+			LazoCorriente=2.5*(Voltaje_rms_F/350.371);
+			
+			/* Mayor que +250 mV  */
+            if(I_rms>(120)){
+                P6OUT|= 0x01;
+			    P3OUT|= 0x02;
+			}
             else {
+				P3OUT&= ~0x02;
                 P6OUT&= ~0x01;}
-            
-            tick_500ms_elapsed = false; // Reset the flag (signal 'handled')
+		
+            tick_200ms_elapsed = false; // Reset the flag (signal 'handled')
         }
 
-        if (tick1_1000ms_elapsed) {
-            P6OUT^= 0x02;
-            
-            tick1_1000ms_elapsed = false; // Reset the flag (signal 'handled')
+		static uint16_t Periodo,enhz;
+		
+
+    		
+/*		Tarea DA		*/
+        if (tick_500ms_elapsed) {
+		  
+		  /* Salida Del lazo de corriente*/
+			ADC12CTL0 = REF2_5V + REFON;
+			DAC12_0CTL = DAC12IR+ DAC12AMP_5 + DAC12ENC;  // Int ref gain 1
+  			DAC12_0DAT = (uint16_t)(LazoCorriente*4095/2.5) ;                  						// 1.0V (2.5V = 0x0FFFh)
+					
+            Periodo = ( ((uint16_t) TablaDatos[43] << 8) + (uint16_t) TablaDatos[42] );
+			enhz=223750/(Periodo+1);
+	    	
+			P6OUT^= 0x01;
+          	P6OUT^= 0x02;
+		
+          
+          tick_500ms_elapsed = false; // Reset the flag (signal 'handled')
         }
 
         //LPM1;
@@ -259,36 +757,58 @@ int main(void)
 
 /*---------------------------Functions---------------------------*/
 /*---------------------------------------------------------------*/
+bool RS232_send ( uint8_t alfa){    
+    /*UCAxTXIFG is automatically reset if a character is written to UCAxTXBUF.*/
+    if (UC1IFG&UCA1TXIFG){
+ // while(!UC1IFG&UCA1TXIFG){};
+  	 	 UCA1TXBUF =alfa;	
+        return 1;
+    }
+    return 0;
+}
 
+void Send_Text ( char* beta){    
+    
+  	while((*beta)>0){
+	    if(RS232_send((*beta)))
+		{beta++;}
+	};
+	
+}
+
+//COnfiguracion de Pines del puerto P3 para UART
 void UART0_P3_config (void){
 
-    /* Comm ADE7953 4800baud oversampling */
-  
-    P3SEL = 0x30;                           // P3.4,5 = USCI_A0 TXD/RXD
-    UCA0CTL1 |= UCSSEL0;//ACLK   //UCSSEL_2;                   // SMCLK
+    /* Comm ADE7953 4800baud oversampling */ 
+   
+	
+	P3SEL |= 0x30;                           // P3.4,5 = USCI_A0 TXD/RXD
+    UCA0CTL1 |= UCSSEL0;//ACLK   //UCSSEL_2;                   // SMCLK 0100 0000
     UCA0CTL0=0;                         //LSB first, 8-bit data, Parity disabled        0x0060
-    //UCA0CTL0=UCMSB;                      //MSB first, 8-bit data, Parity disabled
-    //UCA0CTL0=UCPEN;                         //LSB first, 8-bit data, Parity enabled 
-    
- 
-    //UCA0BR0 = 208;                       // 16 MHz 4800
-    //UCA0BR1 = 0;                         // 16 MHz 4800
 
     UCA0BR0 = 6;                           //  32768 Hz 4800
     UCA0BR1 = 0;                           //  32768 Hz 4800
     
-  //  UCA0MCTL=  UCBRF_5 +UCOS16;             // Modln UCBRFx=5 UCBRSx=0, over sampling
-      UCA0MCTL=  UCBRS_7 ;                    // Modln UCBRSx=0
-    
+    UCA0MCTL=  UCBRS_7 ;                    // Modln UCBRSx=0
+	  
     UCA0CTL1 &= ~UCSWRST;                   // **Initialize USCI state machine**
     IE2 |= UCA0RXIE;                        // Enable USCI_A0 RX interrupt //UCA0TXIE para TX
-   __bis_SR_register( GIE);
-
-    //Max. TX bit error: -0.10999999999997123(-0.10999999999997123,0)
+   	UC0IE |= UCA0RXIE;
+	//Max. TX bit error: -0.10999999999997123(-0.10999999999997123,0)
     //Max. RX bit error (sync.: -0.5 BRCLK): -0.10500000000010501(-0.10500000000010501,0)
     //Max. RX bit error (sync.: +/-0 BRCLK): -0.09000000000009001(-0.09000000000009001,0.009999999999992653)
     //Max. RX bit error (sync.: +0.5 BRCLK): -0.075000000000075(-0.075000000000075,0.024999999999994644)
     //Max. RX bit error (over: -0.5,0,+0.5): 0(-0.10500000000010501,0.024999999999994644)
+
+	P3SEL |= 0xC0;                          // P3.6,7 = USCI_A1 TXD/RXD
+ 	UCA1CTL1 |= UCSSEL0;                    // CLK = ACLK
+	UCA1CTL0=0;                         	//LSB first, 8-bit data, Parity disabled
+  	UCA1BR0 = 0x03;                         // 
+  	UCA1BR1 = 0x00;                         //
+  	UCA1MCTL = UCBRS_3;                     // Modulation UCBRSx = 6 UCBRFx=13 Oversampling  
+  	UCA1CTL1 &= ~UCSWRST;                   // **Initialize USCI state machine**
+  	UC1IE |= UCA1RXIE;                      // Enable USCI_A1 RX interrupt
+
 }
 
 
@@ -375,3 +895,31 @@ void Set_DCO_using32kHz(void)                          // Set DCO to selected fr
     BCSCTL1 &= ~DIVA_3;                       // ACLK = LFXT1CLK = 32.768KHz
 }
 
+/////////////////30 31 37 38 39 
+// 1 5 6 9  *
+// 0 1 2 3  ese
+int numero_input( void) {
+
+  		int ese=0, scale=1;
+		int gamma=0;
+		for (int r=0;r<16;r=r+1){
+		  if(AuxBuffer[r]=='*' || AuxBuffer[r]==8){
+		  ese=r; r=17;
+		  }
+
+		}
+		if(ese>0){
+
+			for (int r=ese-1;r>-1;r=r-1){
+				if(AuxBuffer[r]>47 && AuxBuffer[r]<58){
+					gamma=gamma+(scale*(AuxBuffer[r]-48));
+					scale=scale*10;
+				}
+				for(int r=ese;r<16;r++){AuxBuffer[r]=0;};
+			}
+		return gamma;
+		}
+		else{return 0;};
+	  
+}
+/////////////
