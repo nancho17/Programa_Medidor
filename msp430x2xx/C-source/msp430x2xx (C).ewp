@@ -1139,6 +1139,18 @@
     <name>$PROJ_DIR$\..\ADELIB\Debug\Exe\ADELIB.r43</name>
   </file>
   <file>
+    <name>$PROJ_DIR$\..\C-extras\mod_ascii.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\C-extras\mod_ascii.h</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\C-extras\modbus_med.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\C-extras\modbus_med.h</name>
+  </file>
+  <file>
     <name>$PROJ_DIR$\msp430x2xx_fet_1.c</name>
   </file>
 </project>

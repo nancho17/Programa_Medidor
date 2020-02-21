@@ -2,77 +2,113 @@
 
 <project>
   <fileVersion>2</fileVersion>
-  <fileChecksum>2151266849</fileChecksum>
+  <fileChecksum>1063127980</fileChecksum>
   <configuration>
     <name>Debug</name>
     <outputs>
-      <file>$PROJ_DIR$\..\C-extras\ADE7953.c</file>
-      <file>$TOOLKIT_DIR$\inc\msp430f2618.h</file>
-      <file>$TOOLKIT_DIR$\inc\msp430.h</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\stdbool.h</file>
-      <file>$TOOLKIT_DIR$\inc\intrinsics.h</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\xencoding_limits.h</file>
-      <file>$PROJ_DIR$\Debug\Obj\msp430x2xx_fet_1.pbi</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Threads.h</file>
-      <file>$PROJ_DIR$\Debug\Exe\msp430x2xx (C).ulp</file>
-      <file>$TOOLKIT_DIR$\config\linker\lnk430f2618.xcl</file>
-      <file>$PROJ_DIR$\Debug\Obj\msp430x2xx_fet_1.r43</file>
       <file>$TOOLKIT_DIR$\inc\dlib\c\ycheck.h</file>
-      <file>$PROJ_DIR$\msp430x2xx_fet_1.c</file>
-      <file>$TOOLKIT_DIR$\lib\dlib\dl430xlsfn.h</file>
-      <file>$TOOLKIT_DIR$\lib\dlib\dl430xlsfn.r43</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Product.h</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Defaults.h</file>
-      <file>$TOOLKIT_DIR$\inc\in430.h</file>
-      <file>$TOOLKIT_DIR$\config\linker\multiplier.xcl</file>
-      <file>$PROJ_DIR$\..\C-extras\ADE7953.h</file>
-      <file>$PROJ_DIR$\..\ADELIB\Debug\Exe\ADELIB.r43</file>
+      <file>$TOOLKIT_DIR$\inc\msp430f2618.h</file>
       <file>$PROJ_DIR$\Debug\Exe\msp430x2xx (C).d43</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\yvals.h</file>
-      <file>$PROJ_DIR$\Debug\Obj\msp430x2xx (C).pbd</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\stdint.h</file>
-      <file>$PROJ_DIR$\Debug\Obj\msp430x2xx_fet_1.__cstat.et</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Product.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Threads.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\msp430x2xx_fet_1.pbi</file>
+      <file>$TOOLKIT_DIR$\lib\dlib\dl430xlsfn.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\msp430x2xx_fet_1.r43</file>
+      <file>$PROJ_DIR$\Debug\Obj\mod_ascii.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Defaults.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\stdbool.h</file>
       <file>$PROJ_DIR$\Debug\Obj\ADE7953.__cstat.et</file>
       <file>$PROJ_DIR$\Debug\Obj\ADE7953.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\stdint.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\modbus_med.__cstat.et</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\xencoding_limits.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\mod_ascii.pbi</file>
       <file>$PROJ_DIR$\Debug\Obj\ADE7953.pbi</file>
+      <file>$TOOLKIT_DIR$\inc\in430.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\modbus_med.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\assert.h</file>
+      <file>$TOOLKIT_DIR$\config\linker\multiplier.xcl</file>
+      <file>$PROJ_DIR$\Debug\Obj\msp430x2xx (C).pbd</file>
+      <file>$PROJ_DIR$\..\C-extras\mod_ascii.c</file>
+      <file>$PROJ_DIR$\Debug\Obj\modbus_med.pbi</file>
+      <file>$TOOLKIT_DIR$\lib\dlib\dl430xlsfn.r43</file>
+      <file>$PROJ_DIR$\..\C-extras\ADE7953.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\string.h</file>
+      <file>$TOOLKIT_DIR$\inc\intrinsics.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\mod_ascii.__cstat.et</file>
+      <file>$PROJ_DIR$\..\C-extras\mod_ascii.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\cassert</file>
+      <file>$TOOLKIT_DIR$\config\linker\lnk430f2618.xcl</file>
+      <file>$PROJ_DIR$\Debug\Obj\msp430x2xx_fet_1.__cstat.et</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\yvals.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\ysizet.h</file>
+      <file>$TOOLKIT_DIR$\inc\msp430.h</file>
+      <file>$PROJ_DIR$\..\C-extras\modbus_med.h</file>
+      <file>$PROJ_DIR$\..\C-extras\modbus_med.c</file>
+      <file>$PROJ_DIR$\msp430x2xx_fet_1.c</file>
+      <file>$PROJ_DIR$\..\C-extras\ADE7953.c</file>
+      <file>$PROJ_DIR$\..\ADELIB\Debug\Exe\ADELIB.r43</file>
     </outputs>
     <file>
-      <name>[ROOT_NODE]</name>
-      <outputs>
+      <name>$PROJ_DIR$\Debug\Exe\msp430x2xx (C).d43</name>
+      <inputs>
         <tool>
           <name>XLINK</name>
-          <file> 21</file>
+          <file> 32 21 12 41 8 19 7 25</file>
         </tool>
-        <tool>
-          <name>ULP430</name>
-          <file> 8</file>
-        </tool>
-      </outputs>
+      </inputs>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\C-extras\ADE7953.c</name>
+      <name>$PROJ_DIR$\..\C-extras\mod_ascii.c</name>
       <outputs>
         <tool>
           <name>ICC430</name>
-          <file> 27</file>
+          <file> 8</file>
         </tool>
         <tool>
           <name>BICOMP</name>
-          <file> 28</file>
+          <file> 16</file>
         </tool>
         <tool>
           <name>__cstat</name>
-          <file> 26</file>
+          <file> 29</file>
         </tool>
       </outputs>
       <inputs>
         <tool>
           <name>ICC430</name>
-          <file> 19 24 11 22 16 13 15 5 7 3 2 1 17 4</file>
+          <file> 37 13 0 34 9 6 3 15 4 10 36 1 18 28 30</file>
         </tool>
         <tool>
           <name>BICOMP</name>
-          <file> 11 15 1 3 16 7 13 22 24 2 5 17 4 19</file>
+          <file> 13 34 15 0 30 10 36 9 4 6 3 1 18 37 28</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\C-extras\modbus_med.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 19</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 24</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 14</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 31 0 34 9 6 3 15 4 20 27 35 37 13 10 36 1 18 28 30</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 13 34 0 35 1 27 30 20 15 18 37 9 4 6 3 10 36 31 28</file>
         </tool>
       </inputs>
     </file>
@@ -81,36 +117,63 @@
       <outputs>
         <tool>
           <name>ICC430</name>
-          <file> 10</file>
+          <file> 7</file>
         </tool>
         <tool>
           <name>BICOMP</name>
-          <file> 6</file>
+          <file> 5</file>
         </tool>
         <tool>
           <name>__cstat</name>
-          <file> 25</file>
+          <file> 33</file>
         </tool>
       </outputs>
       <inputs>
         <tool>
           <name>ICC430</name>
-          <file> 2 1 17 4 24 11 22 16 13 15 5 7 3 19</file>
+          <file> 36 1 18 28 13 0 34 9 6 3 15 4 10 26 37</file>
         </tool>
         <tool>
           <name>BICOMP</name>
-          <file> 17 19 24 1 4 11 16 15 3 22 7 13 2 5</file>
+          <file> 18 26 15 13 10 28 37 1 34 0 36 9 4 6 3</file>
         </tool>
       </inputs>
     </file>
     <file>
-      <name>$PROJ_DIR$\Debug\Exe\msp430x2xx (C).d43</name>
+      <name>$PROJ_DIR$\..\C-extras\ADE7953.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 12</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 17</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 11</file>
+        </tool>
+      </outputs>
       <inputs>
         <tool>
-          <name>XLINK</name>
-          <file> 9 18 27 20 10 14</file>
+          <name>ICC430</name>
+          <file> 26 13 0 34 9 6 3 15 4 10 36 1 18 28</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 0 3 1 10 9 4 6 34 13 36 15 18 28 26</file>
         </tool>
       </inputs>
+    </file>
+    <file>
+      <name>[ROOT_NODE]</name>
+      <outputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 2</file>
+        </tool>
+      </outputs>
     </file>
   </configuration>
 </project>
