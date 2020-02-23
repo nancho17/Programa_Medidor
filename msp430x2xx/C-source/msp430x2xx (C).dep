@@ -17,29 +17,22 @@
       <file>$PROJ_DIR$\Debug\Obj\mod_ascii.r43</file>
       <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Defaults.h</file>
       <file>$TOOLKIT_DIR$\inc\dlib\c\stdbool.h</file>
-      <file>$PROJ_DIR$\Debug\Obj\ADE7953.__cstat.et</file>
       <file>$PROJ_DIR$\Debug\Obj\ADE7953.r43</file>
       <file>$TOOLKIT_DIR$\inc\dlib\c\stdint.h</file>
-      <file>$PROJ_DIR$\Debug\Obj\modbus_med.__cstat.et</file>
       <file>$TOOLKIT_DIR$\inc\dlib\c\xencoding_limits.h</file>
       <file>$PROJ_DIR$\Debug\Obj\mod_ascii.pbi</file>
       <file>$PROJ_DIR$\Debug\Obj\ADE7953.pbi</file>
       <file>$TOOLKIT_DIR$\inc\in430.h</file>
       <file>$PROJ_DIR$\Debug\Obj\modbus_med.r43</file>
       <file>$TOOLKIT_DIR$\inc\dlib\c\assert.h</file>
-      <file>$TOOLKIT_DIR$\config\linker\multiplier.xcl</file>
       <file>$PROJ_DIR$\Debug\Obj\msp430x2xx (C).pbd</file>
       <file>$PROJ_DIR$\..\C-extras\mod_ascii.c</file>
       <file>$PROJ_DIR$\Debug\Obj\modbus_med.pbi</file>
-      <file>$TOOLKIT_DIR$\lib\dlib\dl430xlsfn.r43</file>
       <file>$PROJ_DIR$\..\C-extras\ADE7953.h</file>
       <file>$TOOLKIT_DIR$\inc\dlib\c\string.h</file>
       <file>$TOOLKIT_DIR$\inc\intrinsics.h</file>
-      <file>$PROJ_DIR$\Debug\Obj\mod_ascii.__cstat.et</file>
       <file>$PROJ_DIR$\..\C-extras\mod_ascii.h</file>
       <file>$TOOLKIT_DIR$\inc\dlib\c\cassert</file>
-      <file>$TOOLKIT_DIR$\config\linker\lnk430f2618.xcl</file>
-      <file>$PROJ_DIR$\Debug\Obj\msp430x2xx_fet_1.__cstat.et</file>
       <file>$TOOLKIT_DIR$\inc\dlib\c\yvals.h</file>
       <file>$TOOLKIT_DIR$\inc\dlib\c\ysizet.h</file>
       <file>$TOOLKIT_DIR$\inc\msp430.h</file>
@@ -47,17 +40,7 @@
       <file>$PROJ_DIR$\..\C-extras\modbus_med.c</file>
       <file>$PROJ_DIR$\msp430x2xx_fet_1.c</file>
       <file>$PROJ_DIR$\..\C-extras\ADE7953.c</file>
-      <file>$PROJ_DIR$\..\ADELIB\Debug\Exe\ADELIB.r43</file>
     </outputs>
-    <file>
-      <name>$PROJ_DIR$\Debug\Exe\msp430x2xx (C).d43</name>
-      <inputs>
-        <tool>
-          <name>XLINK</name>
-          <file> 32 21 12 41 8 19 7 25</file>
-        </tool>
-      </inputs>
-    </file>
     <file>
       <name>$PROJ_DIR$\..\C-extras\mod_ascii.c</name>
       <outputs>
@@ -67,21 +50,13 @@
         </tool>
         <tool>
           <name>BICOMP</name>
-          <file> 16</file>
-        </tool>
-        <tool>
-          <name>__cstat</name>
-          <file> 29</file>
+          <file> 14</file>
         </tool>
       </outputs>
       <inputs>
         <tool>
-          <name>ICC430</name>
-          <file> 37 13 0 34 9 6 3 15 4 10 36 1 18 28 30</file>
-        </tool>
-        <tool>
           <name>BICOMP</name>
-          <file> 13 34 15 0 30 10 36 9 4 6 3 1 18 37 28</file>
+          <file> 12 27 13 0 25 10 29 9 4 6 3 1 16 30 24</file>
         </tool>
       </inputs>
     </file>
@@ -90,25 +65,17 @@
       <outputs>
         <tool>
           <name>ICC430</name>
-          <file> 19</file>
+          <file> 17</file>
         </tool>
         <tool>
           <name>BICOMP</name>
-          <file> 24</file>
-        </tool>
-        <tool>
-          <name>__cstat</name>
-          <file> 14</file>
+          <file> 21</file>
         </tool>
       </outputs>
       <inputs>
         <tool>
-          <name>ICC430</name>
-          <file> 31 0 34 9 6 3 15 4 20 27 35 37 13 10 36 1 18 28 30</file>
-        </tool>
-        <tool>
           <name>BICOMP</name>
-          <file> 13 34 0 35 1 27 30 20 15 18 37 9 4 6 3 10 36 31 28</file>
+          <file> 12 27 0 28 1 23 25 18 13 16 30 9 4 6 3 10 29 26 24</file>
         </tool>
       </inputs>
     </file>
@@ -123,19 +90,11 @@
           <name>BICOMP</name>
           <file> 5</file>
         </tool>
-        <tool>
-          <name>__cstat</name>
-          <file> 33</file>
-        </tool>
       </outputs>
       <inputs>
         <tool>
-          <name>ICC430</name>
-          <file> 36 1 18 28 13 0 34 9 6 3 15 4 10 26 37</file>
-        </tool>
-        <tool>
           <name>BICOMP</name>
-          <file> 18 26 15 13 10 28 37 1 34 0 36 9 4 6 3</file>
+          <file> 3 0 29 24 12 22 1 16 10 30 9 4 6 27 13</file>
         </tool>
       </inputs>
     </file>
@@ -144,25 +103,17 @@
       <outputs>
         <tool>
           <name>ICC430</name>
-          <file> 12</file>
+          <file> 11</file>
         </tool>
         <tool>
           <name>BICOMP</name>
-          <file> 17</file>
-        </tool>
-        <tool>
-          <name>__cstat</name>
-          <file> 11</file>
+          <file> 15</file>
         </tool>
       </outputs>
       <inputs>
         <tool>
-          <name>ICC430</name>
-          <file> 26 13 0 34 9 6 3 15 4 10 36 1 18 28</file>
-        </tool>
-        <tool>
           <name>BICOMP</name>
-          <file> 0 3 1 10 9 4 6 34 13 36 15 18 28 26</file>
+          <file> 0 3 1 10 9 4 6 27 12 29 13 16 24 22</file>
         </tool>
       </inputs>
     </file>

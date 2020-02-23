@@ -28,20 +28,20 @@
     <Windows>
       
       
-    </Windows>
+    <Wnd0><Tabs><Tab><Identity>TabID-5479-16470</Identity><TabName>Build</TabName><Factory>Build</Factory><Session/></Tab></Tabs><SelectedTab>0</SelectedTab></Wnd0></Windows>
     <Editor>
       
       
       
       
-    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\msp430x2xx\C-source\msp430x2xx_fet_1.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>1093</YPos2><SelStart2>31848</SelStart2><SelEnd2>31848</SelEnd2></Tab><ActiveTab>0</ActiveTab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
+    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\msp430x2xx\C-source\msp430x2xx_fet_1.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>415</YPos2><SelStart2>10828</SelStart2><SelEnd2>10828</SelEnd2></Tab><ActiveTab>0</ActiveTab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
     <Positions>
       
       
       
       
       
-    <Top><Row0><Sizes><Toolbar-05E77260><key>iaridepm.enu1</key></Toolbar-05E77260></Sizes></Row0></Top><Left><Row0><Sizes/></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes/></Row0></Bottom><Float><Sizes/></Float></Positions>
+    <Top><Row0><Sizes><Toolbar-05E77260><key>iaridepm.enu1</key></Toolbar-05E77260></Sizes></Row0></Top><Left><Row0><Sizes/></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd0><Rect><Top>-2</Top><Left>-2</Left><Bottom>186</Bottom><Right>1602</Right><x>-2</x><y>-2</y><xscreen>1604</xscreen><yscreen>188</yscreen><sizeHorzCX>1002500</sizeHorzCX><sizeHorzCY>230110</sizeHorzCY><sizeVertCX>125000</sizeVertCX><sizeVertCY>244798</sizeVertCY></Rect></Wnd0></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
   </Desktop>
 </Workspace>
 
