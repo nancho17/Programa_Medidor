@@ -17,7 +17,7 @@ Counter0=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 [EEM Cycle Counter 1]
 Counter1=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 [DebugChecksum]
-Checksum=1117971082
+Checksum=-336862765
 [CodeCoverage]
 Enabled=_ 0
 [DriverProfiling]
@@ -75,11 +75,16 @@ ShowTimeLog=1
 [TermIOLog]
 LoggingEnabled=_ 0
 LogFile=_ ""
+[Log file]
+LoggingEnabled=_ 0
+LogFile=_ ""
+Category=_ 0
 [Breakpoints]
 Bp0=_ "Range" "Memory:0x2E" 0 "0x2f" 0 18 0 1 0 0 0 0 0 0
 Bp1=_ "Range" "Memory:0x2E" 0 "0x2f" 0 18 0 1 0 0 0 0 0 0
 Bp2=_ "Range" "Memory:0x2E" 0 "" 0 18 0 1 0 0 0 0 0 0
-Count=3
+Bp3=_ "STD_CODE" "{$PROJ_DIR$\msp430x2xx_fet_1.c}.1215.1" 1 0 0 0 "" 0 ""
+Count=4
 [FET]
 Clock mode=46
 Extended Clock mode=1
@@ -100,10 +105,6 @@ SP=0
 SR=0
 all registers=0
 File name=
-[Log file]
-LoggingEnabled=_ 0
-LogFile=_ ""
-Category=_ 0
 [Aliases]
 Count=0
 SuppressDialog=0

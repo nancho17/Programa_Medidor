@@ -69,6 +69,23 @@
 	uint16_t A[2];
 	} SendFloat;
 
+/*---------Definicion de estructura---------*/
+typedef struct  {
+	uint32_t Resistores_VP_N;
+	uint32_t Shunt_IAP_N;
+	
+	uint16_t Offset_VP_N;
+	uint16_t Offset_IAP_N;
+	
+	uint8_t PGA_IA;
+	uint8_t PGA_V;
+	
+	uint8_t Cloop; // 1 Vrms 2 Irms 3 Voltaje Pico
+	
+	uint8_t Rele_Selec; //1 Sobre Tension 2 Sobre corriente 3 Sub Tension 4 Sub Potencia
+	uint32_t Rele_Value;
+		  
+} boot_menu;
 
 /*---------Functions_Declarations---------*/
 void Set_DCO_using32kHz(void);
@@ -77,7 +94,7 @@ void UART0_P3_config (void);
 bool RS232_send ( uint8_t);
 void Send_Text ( char*);
 int numero_input( void);
-void menu_serie(bool*,bool*, uint8_t*, uint8_t* );
+void menu_serie(bool*,bool*, uint8_t*,boot_menu *,float *);
 
 
 //bool Escritura_ADE795 ( uint8_t); 
@@ -88,6 +105,7 @@ void menu_serie(bool*,bool*, uint8_t*, uint8_t* );
 /*---------NO_Optimized_Variables---------*/
 static volatile uint32_t ms_ticks = 0;
 static volatile uint32_t ms2_ticks = 0;
+static volatile uint32_t ten_ms_ticks = 0;
 
 static volatile bool tick_1ms_elapsed = false;
 
@@ -95,7 +113,7 @@ static volatile bool tick_500ms_elapsed = false;
 static volatile bool tick_200ms_elapsed = false;
 static volatile bool tick_100ms_elapsed = false;
 
-static volatile bool tick_10s_elapsed = true;
+static volatile bool tick_10s_elapsed = false;
 
 
 /*---------Global_Variables---------*/
@@ -114,23 +132,7 @@ uint8_t aux_menu=0;			// Manejo menu RX1
 
 char AuxBuffer[16];  	// Buffer consola serial
 
-/*---------Definicion de estructura---------*/
-struct boot_menu {
-	uint32_t Resistores_VP_N;
-	uint32_t Shunt_IAP_N;
-	
-	uint16_t Offset_VP_N;
-	uint16_t Offset_IAP_N;
-	
-	uint8_t PGA_IA;
-	uint8_t PGA_V;
-	
-	uint8_t Cloop; // 1 Vrms 2 Irms 3 Voltaje Pico
-	
-	uint8_t Rele_Selec; //1 Sobre Tension 2 Sobre corriente 3 Sub Tension 4 Sub Potencia
-	uint32_t Rele_Value;
-		  
-} ;
+
 
 /*Funcion que maneja la interrucpion del tmer 0*/
 
@@ -159,16 +161,23 @@ void Time_Handler_1(void)
 }
 
 /*Funcion que maneja la interrucpion del tmer 1*/
-void Time_Handler_2(void)
-{
-  	ms2_ticks++;
-	tick_100ms_elapsed = true;
+void Time_Handler_2(void) {
+    ms2_ticks++;
+    
+    
+    tick_100ms_elapsed = true;
   
-	if (ms2_ticks > 1 ) {
+    if (ms2_ticks > 1 ) {
         tick_200ms_elapsed = true; //200 ms
         ms2_ticks=0;
     }
-        
+    
+    if (ten_ms_ticks < 100 ) {
+        ten_ms_ticks++; //10s
+    }
+    else {
+        tick_10s_elapsed = true;
+    }
     CCR1+=3276; // El timer interrumpe cada 100 ms
 }
 
@@ -179,8 +188,8 @@ void Time_Handler_2(void)
 __interrupt void Timer_A_0(void){
   
   LPM1_EXIT;
-  if(tick_10s_elapsed){  Ten_Second_Waiter(); }
-  else{  Time_Handler_1(); }
+//  if(tick_10s_elapsed){  Ten_Second_Waiter(); }
+    Time_Handler_1();
 
 }
 
@@ -233,154 +242,143 @@ __interrupt void USCI1RX_ISR(void)
 /*Main Function*/
 int main(void)
 {
-  	WDTCTL = WDTPW+WDTHOLD;               // Stop watchdog timer
-	struct	boot_menu medidor = {
-  		911, //ohm                      Resistores_VP_N;
-		400, //miliohm                  Shunt_IAP_N
-	
-		0,// Vp-n sin offset            Offset_VP_N
-		0,//IAp-n sin offset           Offset_IAP_N
+    WDTCTL = WDTPW+WDTHOLD;               // Stop watchdog timer
+
+    /*------Seteo parametros predeterminados ------*/
+    boot_menu medidor_setup = {
+        911, //ohm                      Resistores_VP_N;
+        400, //miliohm                  Shunt_IAP_N
+
+        0,// Vp-n sin offset            Offset_VP_N
+        0,//IAp-n sin offset           Offset_IAP_N
 		
-		2,// PGA_IA Ganancia 2 
-		1,// PGA_V  Ganancia 1
-		
-		1,// proporcional a Vrms
-		
-		1,  // Rele acciona por sobretension
-		150, //Valor :150V
+        2,// PGA_IA Ganancia 2 
+        1,// PGA_V  Ganancia 1
+        
+        1,// proporcional a Vrms
+        
+        1,  // Rele acciona por sobretension
+        150, //Valor :150V
 	};
 
-	for (int i = 0; i < 0xfffe; i++);     // Delay for XTAL stabilization
-     
+    /*---Delays---*/
+    for (int i = 0; i < 0xfffe; i++);     // Delay for XTAL stabilization
     Set_DCO_1MHzstored();
 	
-	
-	/*Configuracion de Pines*/
-	P4DIR |= 0xFF;                       // Set P2.0 to output direction
+    /*------Configuracion de Pines---*/
+    P4DIR |= 0xFF;                       // Set P2.0 to output direction
     P4OUT = 0x00;
-	P3SEL &=0x00;  
-	P3DIR |= 0x0F;
-	P3OUT= ADE_RESET;
-	UART0_P3_config();
-	P2DIR |= 0xC0;
-	P2OUT = 0x40;
-	P1DIR |= 0xC0;
-	P1OUT = 0x40;
+    P3SEL &=0x00;  
+    P3DIR |= 0x0F;
+    P3OUT= ADE_RESET;
+    UART0_P3_config();
+    P2DIR |= 0xC0;
+    P2OUT = 0x40;
+    P1DIR |= 0xC0;
+    P1OUT = 0x40;
 
-	/*Delay*/
+    /*Delay*/
     for (int r=0;r<2;r=r+1)
     {
         P4OUT ^= 0xFF;                      // Toggle P1.0 using exclusive-OR
         __delay_cycles(50000);
-        
     }
     
-	/*Seteo e inicio de los timers*/
-	CCR0 =48; //65535; 0.250 ms
+    /*-------------Seteo e inicio de los timers-----------*/
+    CCR0 =48; //65535; 0.250 ms
     CCR1 =15; //65535; 4 ms
-    
     CCTL0=0;
     CCTL1=0;
-    
-    CCTL0 = CCIE;       // CCR0 interrupt enabled + compare mode
-    
-    
     TACTL = TASSEL_1 + MC_2+TAIE;              // ACLK, contmode,TAIFG interrupt request
-    
-    
-    uint8_t TablaTemporal[47];
-	
-	
-	auxiliar=0;		//contador para la recepcion en UART0
-    int be=55;     	//contador para la tabla de datos
-	
+    /*Activo 1er timer*/
+    CCTL0 = CCIE;       // CCR0 interrupt enabled + compare mode
+    /*Activo 2do timer*/
+    CCTL1 = CCIE;       // CCR1 interrupt enabled + compare mode
+    	
+            /*-----------------Modbus Test ------------------------*/
+            /*RTU, Esclavo 5, NULL,9600 baud , Paridad: PAR*/
+            uint16_t * regs; 
+            SetRegStart (7002); // Inicio del registro
 
-    __bis_SR_register(GIE);       //interrupt enable
 
-	float LazoCorriente =0x00; //Variable a enviar al lazo de corriente
-	
-	/*-----Modbus Test -------*/
-	/*RTU, Esclavo 5, NULL,9600 baud , Paridad: PAR*/
-	uint16_t * regs; 
-	SetRegStart (7002); // Inicio del registro
 
-	
+            SendFloat pack;
+            float namas;
+            namas=45.55;
 
-	SendFloat pack;
-	float namas;
-	namas=45.55;
-	
-	
-	regs=GetRegBuff();
 
-	pack.efe=namas;
-	*(regs)	 =pack.A[1];
-	*(regs+1)=pack.A[0];
+            regs=GetRegBuff();
 
-	pack.efe=88.66;
-	*(regs+2)=pack.A[1];
-	*(regs+3)=pack.A[0];
+            pack.efe=namas;
+            *(regs)	 =pack.A[1];
+            *(regs+1)=pack.A[0];
 
-	pack.efe=78952;
-	*(regs+4)=pack.A[1];
-	*(regs+5)=pack.A[0];
+            pack.efe=88.66;
+            *(regs+2)=pack.A[1];
+            *(regs+3)=pack.A[0];
 
-	pack.efe=0.0466;
-	*(regs+6)=pack.A[1];
-	*(regs+7)=pack.A[0];
-	
-	/*MB_RTU , MB_ASCII */
-	  
-	//eMBInit(MB_ASCII, 0X05, 0, 9600, MB_PAR_EVEN);
-	//eMBEnable();
-	
-	
-	while(0){
-	eMBPoll();
-	
-	
-	}
-	
-	
- //Iniciar timer	
-/////////////*			Serial en 10 segundos previos			*/////////////
-        
-        bool flag_0= false;			//Bandera del menu serie
-	bool flag_1= true;			//Manejo de submenus serie
+            pack.efe=78952;
+            *(regs+4)=pack.A[1];
+            *(regs+5)=pack.A[0];
 
-	uint8_t menu_switch=0;	//Posiciones del menu serie
-     	
-        
-	while (tick_10s_elapsed) {// con un timer tick_10s_elapsed=0;
-		for (int r=0;r<14;r=r+1){
-			if(AuxBuffer[r]=='c' || AuxBuffer[r]=='C'){
-				if(AuxBuffer[r+1]=='f' || AuxBuffer[r+1]=='F'){
-					if(AuxBuffer[r+2]=='g' || AuxBuffer[r+2]=='G'){flag_0=true; tick_10s_elapsed=false;}
-				}
-			}
-		}
-	  
-	}
+            pack.efe=0.0466;
+            *(regs+6)=pack.A[1];
+            *(regs+7)=pack.A[0];
 
-	uint8_t Tolstoi=0;
-	int Orwell[16];
-	
-
-	/*Menu*/
-        while (flag_0) {// con un flag
-            menu_serie(&flag_0,&flag_1,&menu_switch,&Tolstoi);
+            /*MB_RTU , MB_ASCII */
+              
+            //eMBInit(MB_ASCII, 0X05, 0, 9600, MB_PAR_EVEN);
+            //eMBEnable();
+            while(0){
+            eMBPoll();
             }
-            
+            /*--- End Modbus TEST--*/
 
-/////////////*			Entra en el bucle de las tareas			*/////////////
-	//activo 2do timer
-	CCTL1 = CCIE;       // CCR1 interrupt enabled + compare mode
-	uint8_t a =0x00; //Contador usado en el loop controlado por tiempo
- 	    
-	while (1) //milisecond controlled Loop
+    /*-----------Manejo del loop de milisegundo-------------*/
+    uint8_t a =0x00;            //Contador usado en el loop controlado por tiempo
+    uint8_t TablaTemporal[47];  // Tabla para la captura de datos del ADE7953      
+	
+    auxiliar=0;		//contador para la recepcion en UART0
+    int be=55;     	//contador para la tabla de datos
+
+    
+    float LazoCorriente =0x00; //Variable a enviar al lazo de corriente
+    float Tabla_floats[10];
+      
+    /*Iniciadores de Menu Serie*/
+    bool flag_0= false;			//Bandera del menu serie
+    bool flag_1= true;			//Manejo de submenus serie
+    int8_t menu_switch=0;	//Posiciones del menu serie
+    uint8_t Tolstoi=0;
+    
+    /*interrupt enable*/
+    __bis_SR_register(GIE);       
+  
+/*-----------------------Entro al Loop Principal controlado por tiempo -----------------------------*/
+/*--------------------------------------------------------------------------------------------------*/
+        while (1) //milisecond controlled Loop
         {
-		  
-/* 		Tarea ADE 		*/		  
+        /*--------------------Menu Serie--------- -----------------*/	
+        if (!tick_10s_elapsed) {
+            for (int r=0;r<14;r=r+1){
+                if(AuxBuffer[r]=='c' || AuxBuffer[r]=='C'){
+                    if(AuxBuffer[r+1]=='f' || AuxBuffer[r+1]=='F'){
+                        if(AuxBuffer[r+2]=='g' || AuxBuffer[r+2]=='G'){flag_0=true; tick_10s_elapsed=true;}
+                    }
+                }
+            }
+        }
+        
+        if (flag_0) {// con un flag
+            menu_serie(&flag_0,&flag_1,&menu_switch,&medidor_setup,Tabla_floats);
+            }
+        else if(tick_10s_elapsed){
+            /*Inicia Modbus*/
+            eMBInit(MB_RTU, 0X05, 0, 9600, MB_PAR_EVEN); //RTU  Direccion_de_esclavo:5 9600bps Paridad:Par     (para ASCII: MB_ASCII)
+            eMBEnable();
+        }
+        
+        /*--------------------Tarea Lectura del ADE -----------------*/		  
         if ( tick_1ms_elapsed ) {
        	
 		  switch(auxiliar){
@@ -445,7 +443,7 @@ int main(void)
         }
         
     
-/*		Tarea Serial			*/		
+        /*---------------------------------Calculo de Datos----------------------*/		
         if (tick_200ms_elapsed) {
 		  
            static int32_t Voltaje_Medido, I_Medido, P_Medido, Q_Medido, I_rms,E_Activa,E_Reactiva;
@@ -458,7 +456,7 @@ int main(void)
 		   //<< 8 * 1 0000 0000 *256
 		   
 		 	Voltaje_Medido = (((uint32_t) TablaDatos[24] << 24) + ((uint32_t) TablaDatos[23] << 16) + ((uint32_t) TablaDatos[22] << 8));
-      		Voltaje_rms    = (((uint32_t) TablaDatos[30] << 24) + ((uint32_t) TablaDatos[29] << 16) + ((uint32_t) TablaDatos[28] << 8));
+                        Voltaje_rms    = (((uint32_t) TablaDatos[30] << 24) + ((uint32_t) TablaDatos[29] << 16) + ((uint32_t) TablaDatos[28] << 8));
 			Voltaje_pico   = (((uint32_t) TablaDatos[46] << 24) + ((uint32_t) TablaDatos[45] << 16) + ((uint32_t) TablaDatos[44] << 8));
 			I_Medido   	   = (((uint32_t) TablaDatos[21] << 24) + ((uint32_t) TablaDatos[20] << 16) + ((uint32_t) TablaDatos[19] << 8));
 			I_rms   	   = (((uint32_t) TablaDatos[27] << 24) + ((uint32_t) TablaDatos[26] << 16) + ((uint32_t) TablaDatos[25] << 8));
@@ -468,7 +466,14 @@ int main(void)
 			E_Reactiva     = (((uint32_t) TablaDatos[36] << 24) + ((uint32_t) TablaDatos[35] << 16) + ((uint32_t) TablaDatos[34] << 8));
 						
 			PowerFactor    = (((uint16_t) TablaDatos[41] << 8)  + TablaDatos[40] );
-			
+/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                        Añadir calculos relacionados con
+                        medidor_setup.Resistores_VP_N;
+                        medidor_setup.Shunt_IAP_N;
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+                        medidor_setup.Resistores_VP_N;
+                        medidor_setup.Shunt_IAP_N;
+
 			Voltaje_Ins_F=(Voltaje_Medido*495.5)/1664000000;
 			//  495.5V ->	6,500,000 *256 32bit			  
 			Voltaje_rms_F=(Voltaje_rms*350.3714100779)/2312193792;    // 353,5 mv rms ->(9032007 24 bit) en chip (9032007*256 =2312193792 32bit)
@@ -493,9 +498,22 @@ int main(void)
 			
 			PF_F=((float)PowerFactor)/32767; //32767;
 			
-			//divisor resistivo 991
+			/* Armado de tabla de floats */
+			Tabla_floats[0]=Voltaje_Ins_F; 
+                        Tabla_floats[1]=Voltaje_rms_F; 
+                        Tabla_floats[2]=Voltaje_p_F;   
+                        Tabla_floats[3]=Corriente_F;   
+                        Tabla_floats[4]=I_rms_F;              
+                        Tabla_floats[5]=Pow_F;              
+                        Tabla_floats[6]=Q_F;
+                        Tabla_floats[7]=E_Activa_F;
+                        Tabla_floats[8]=E_Reactiva_F;
+                        Tabla_floats[9]=E_Acumulator;
+                        Tabla_floats[10]=kiloWh;
+                        Tabla_floats[11]=PF_F;
+                        /*---------------------------*/
 			
-			Voltaje_Medido=Voltaje_Ins_F;
+                        Voltaje_Medido=Voltaje_Ins_F;
 			Voltaje_rms=Voltaje_rms_F;
 	  		Voltaje_pico=Voltaje_p_F;
 			I_Medido=Corriente_F*1000;
@@ -518,7 +536,6 @@ int main(void)
             tick_200ms_elapsed = false; // Reset the flag (signal 'handled')
         }
 
-		//eMBPoll();// Poner en bucle de 1 milisegundo (?)
 		static uint16_t Periodo,enhz;
 		
 
@@ -540,8 +557,13 @@ int main(void)
           
           tick_500ms_elapsed = false; // Reset the flag (signal 'handled')
         }
+        
+        /* Tarea Modbus! (Se activa si sale del menu)*/
+        if(tick_10s_elapsed&&(!flag_0)){
+        eMBPoll();
+        }	
 
-        //LPM1;
+         //LPM1;
     };
     
     //__bis_SR_register(LPM0_bits); // Enter LPM0 w/ interrupt    
@@ -551,8 +573,8 @@ int main(void)
 
 
 
-/*---------------------------Functions---------------------------*/
-/*---------------------------------------------------------------*/
+/*-----------------------------------------------Functions-----------------------------------------------*/
+/*-------------------------------------------------------------------------------------------------------*/
 bool RS232_send ( uint8_t alfa){    
     /*UCAxTXIFG is automatically reset if a character is written to UCAxTXBUF.*/
     if (UC1IFG&UCA1TXIFG){
@@ -718,14 +740,44 @@ int numero_input( void) {
 }
 
 
-void menu_serie(bool *a, bool *b, uint8_t *c, uint8_t *d){
+void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *Setup,float *Mediciones){
   
-    bool flag_0=*(a);
-    bool flag_1=*b;
-    uint8_t menu_switch=*c;
-    uint8_t Tolstoi=*d;
-   
+    uint8_t Tolstoi=*(Mediciones+0);
+    uint8_t Clarke=*(Mediciones+1);
+
+    Setup->Resistores_VP_N=857;
     
+
+    float med=*Mediciones;
+    int quantity, bigten;
+    char mostrar_num[11];
+
+    
+    //float med=*Mediciones;
+    med=1234567.12345678;
+    int eldecimal,rett;
+	
+	eldecimal=med;
+	char enter[8],decim[8], floaterr[16];
+ 	eldecimal=(med-eldecimal)*10000;
+
+	rett=snprintf(floaterr, sizeof(floaterr), "%f", med);
+	rett=med;
+	rett=snprintf(enter, sizeof(enter), "%d", 0, rett);
+
+	rett=snprintf(decim, sizeof(decim), "%d", 0,eldecimal);
+
+    //Setup->Shunt_IAP_N=9;
+    //Setup->Offset_VP_N=9;
+    //Setup->Offset_IAP_N=9;
+    //Setup->PGA_IA=9;
+    //Setup->PGA_V=9;
+    //Setup->Cloop=9;
+    //Setup->Rele_Selec=9;
+    //Setup->Rele_Value=9;
+    
+      
+      
     char salto1 []="\n\r"; 
 
     char escape =0x1B; //"\e";
@@ -794,48 +846,56 @@ void menu_serie(bool *a, bool *b, uint8_t *c, uint8_t *d){
     char m018[]="*.Aceptar\n\r";
     char m019[]="\n\r -- Boot Menu Cerrado --\n\r";
 
-    switch(menu_switch){
+    switch(*P_M_switch){
         case 0:
-            if(flag_1){
+            if(*P_flag_1){
+                Send_Text(color_verde);
                 Send_Text(salto1);
+                Send_Text(color_reset);
+                
+                Send_Text(color_azul);
                 Send_Text(m1);Send_Text(m2);
                 Send_Text(m3);Send_Text(m4);
                 Send_Text(m5);Send_Text(m6);
                 Send_Text(salida);
-                flag_1=0;
+                Send_Text(color_reset);
+
+                *P_flag_1=0;
             }
           
-            if(aux_menu=='0'){menu_switch=0; flag_1=1; aux_menu=0;}
-            if(aux_menu=='1'){menu_switch=1; flag_1=1; aux_menu=0;}
-            if(aux_menu=='2'){menu_switch=2; flag_1=1; aux_menu=0;}
-            if(aux_menu=='3'){menu_switch=3; flag_1=1; aux_menu=0;}
-            if(aux_menu=='4'){menu_switch=4; flag_1=1; aux_menu=0;}
-            if(aux_menu=='5'){menu_switch=5; flag_1=1; aux_menu=0;}
-            if(aux_menu=='q'||aux_menu=='Q'){Send_Text(m019);flag_0=0;}
+            if(aux_menu=='0'){*P_M_switch=0; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='1'){*P_M_switch=1; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='2'){*P_M_switch=2; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='3'){*P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='4'){*P_M_switch=4; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='5'){*P_M_switch=5; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='q'||aux_menu=='Q'){Send_Text(m019);*P_flag_0=0;}
             break;
 		  
         case 1:
-            if(flag_1){
+            if(*P_flag_1){
                 Send_Text(salto1);
-                Send_Text(color_azul);
+                Send_Text(color_verde);
+                Send_Text(m1)
+                Send_Text(color_reset);
                 Send_Text(m2_1);
                 Send_Text(m2_2);
                 Send_Text(m10);
-                flag_1=0;
+                *P_flag_1=0;
             }
-            if(aux_menu=='0'||aux_menu==0x1B){menu_switch=0; flag_1=1; aux_menu=0;}
-            if(aux_menu=='1'){menu_switch=11; flag_1=1; aux_menu=0;} 
-            if(aux_menu=='2'){menu_switch=12; flag_1=1; aux_menu=0;} 			
+            if(aux_menu=='0'||aux_menu==0x1B){*P_M_switch=0; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='1'){*P_M_switch=11; *P_flag_1=1; aux_menu=0;} 
+            if(aux_menu=='2'){*P_M_switch=12; *P_flag_1=1; aux_menu=0;} 			
             break;
       
         case 11: //Inserte valor, presione * para confirmar q para salir
-            if(flag_1){
+            if(*P_flag_1){
                 Send_Text(salto1);
                 Send_Text(m813);
                 Send_Text(m018);
                 Send_Text(salida);
                 auxiliar2=0;
-                flag_1=0;}
+                *P_flag_1=0;}
            
             if(aux_menu=='*'||aux_menu==0xD){
                 Send_Text(salto1);
@@ -844,25 +904,25 @@ void menu_serie(bool *a, bool *b, uint8_t *c, uint8_t *d){
                 
                 Send_Text(AuxBuffer);
                 Send_Text(m013);
-                menu_switch=0; 
-                flag_1=1; 
+                *P_M_switch=0; 
+                *P_flag_1=1; 
                 aux_menu=0;}
 
             if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
                 Send_Text(m017);
-                menu_switch=0; 
-                flag_1=1; 
+                *P_M_switch=0; 
+                *P_flag_1=1; 
                 aux_menu=0;}
             break;
           
         case 12:
-            if(flag_1){
+            if(*P_flag_1){
                 Send_Text(salto1);
                 Send_Text(m813);
                 Send_Text(m018);
                 Send_Text(salida);
                 auxiliar2=0;
-                flag_1=0;}
+                *P_flag_1=0;}
 
             if(aux_menu=='*'){
                 Send_Text(salto1);
@@ -871,39 +931,39 @@ void menu_serie(bool *a, bool *b, uint8_t *c, uint8_t *d){
                 
                 Send_Text(AuxBuffer);
                 Send_Text(m013);
-                menu_switch=0; 
-                flag_1=1; 
+                *P_M_switch=0; 
+                *P_flag_1=1; 
                 aux_menu=0;}
 
             if(aux_menu=='q'||aux_menu=='Q'){
                 Send_Text(m017);
-                menu_switch=0; 
-                flag_1=1; 
+                *P_M_switch=0; 
+                *P_flag_1=1; 
                 aux_menu=0;}
             break;
         
         case 2:
-            if(flag_1){
+            if(*P_flag_1){
                 Send_Text(salto1);
                 Send_Text(color_rojo);
                 Send_Text(m3_1);
                 Send_Text(m3_2);
                 Send_Text(m10);
-                flag_1=0;}
+                *P_flag_1=0;}
 
-            if(aux_menu=='0'){menu_switch=0; flag_1=1; aux_menu=0;}
-            if(aux_menu=='1'){menu_switch=21; flag_1=1; aux_menu=0;} 
-            if(aux_menu=='2'){menu_switch=22; flag_1=1; aux_menu=0;} 			
+            if(aux_menu=='0'){*P_M_switch=0; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='1'){*P_M_switch=21; *P_flag_1=1; aux_menu=0;} 
+            if(aux_menu=='2'){*P_M_switch=22; *P_flag_1=1; aux_menu=0;} 			
             break;
 
         case 21:
-          if(flag_1){
+          if(*P_flag_1){
             Send_Text(salto1);
             Send_Text(m8);
             Send_Text(m018);
             Send_Text(salida);
             auxiliar2=0;
-            flag_1=0;}
+            *P_flag_1=0;}
        
             if(aux_menu=='*'){
                 Send_Text(salto1);
@@ -912,25 +972,25 @@ void menu_serie(bool *a, bool *b, uint8_t *c, uint8_t *d){
                 
                 Send_Text(AuxBuffer);
                 
-                menu_switch=0; 
-                flag_1=1; 
+                *P_M_switch=0; 
+                *P_flag_1=1; 
                 aux_menu=0;}
 
             if(aux_menu=='q'||aux_menu=='Q'){
                 Send_Text(m017);
-                menu_switch=0; 
-                flag_1=1; 
+                *P_M_switch=0; 
+                *P_flag_1=1; 
                 aux_menu=0;}
             break;
 
         case 22:
-            if(flag_1){
+            if(*P_flag_1){
                 Send_Text(salto1);
                 Send_Text(m8);
                 Send_Text(m018);
                 Send_Text(salida);
                 auxiliar2=0;
-                flag_1=0;}
+                *P_flag_1=0;}
        
             if(aux_menu=='*'){
                 Send_Text(salto1);
@@ -939,33 +999,33 @@ void menu_serie(bool *a, bool *b, uint8_t *c, uint8_t *d){
                 
                 Send_Text(AuxBuffer);
                 
-                menu_switch=0; 
-                flag_1=1; 
+                *P_M_switch=0; 
+                *P_flag_1=1; 
                 aux_menu=0;}
 
             if(aux_menu=='q'||aux_menu=='Q'){
                 Send_Text(m017);
-                menu_switch=0; 
-                flag_1=1; 
+                *P_M_switch=0; 
+                *P_flag_1=1; 
                 aux_menu=0;}
             break;
       
         case 3:
-            if(flag_1){
+            if(*P_flag_1){
                 Send_Text(salto1);
                 Send_Text(color_verde);
                 Send_Text(m4_1);
                 Send_Text(m4_2);
                 Send_Text(m10);
-                flag_1=0;}
+                *P_flag_1=0;}
             
-                if(aux_menu=='0'){menu_switch=0; flag_1=1; aux_menu=0;}
-                if(aux_menu=='1'){menu_switch=31; flag_1=1; aux_menu=0;}
-                if(aux_menu=='2'){menu_switch=32; flag_1=1; aux_menu=0;}
+                if(aux_menu=='0'){*P_M_switch=0; *P_flag_1=1; aux_menu=0;}
+                if(aux_menu=='1'){*P_M_switch=31; *P_flag_1=1; aux_menu=0;}
+                if(aux_menu=='2'){*P_M_switch=32; *P_flag_1=1; aux_menu=0;}
             break;
 
         case 31:
-            if(flag_1){
+            if(*P_flag_1){
                 Send_Text(salto1);
                 Send_Text(m4_101);
                 Send_Text(m4_01);
@@ -974,23 +1034,23 @@ void menu_serie(bool *a, bool *b, uint8_t *c, uint8_t *d){
                 Send_Text(m4_04);
                 Send_Text(m4_05);
                 Send_Text(salida);
-                flag_1=0;}
+                *P_flag_1=0;}
           
             //Cambiar PGA_IA
-            if(aux_menu=='2'){Send_Text(salto1);Send_Text(m4_01);Tolstoi=1;menu_switch=3; flag_1=1; aux_menu=0;}
-            if(aux_menu=='3'){Send_Text(salto1);Send_Text(m4_02);Tolstoi=2;menu_switch=3; flag_1=1; aux_menu=0;}
-            if(aux_menu=='4'){Send_Text(salto1);Send_Text(m4_03);Tolstoi=3;menu_switch=3; flag_1=1; aux_menu=0;}
-            if(aux_menu=='5'){Send_Text(salto1);Send_Text(m4_04);Tolstoi=4;menu_switch=3; flag_1=1; aux_menu=0;}
-            if(aux_menu=='6'){Send_Text(salto1);Send_Text(m4_05);Tolstoi=5;menu_switch=3; flag_1=1; aux_menu=0;}
+            if(aux_menu=='2'){Send_Text(salto1);Send_Text(m4_01);Tolstoi=1;*P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='3'){Send_Text(salto1);Send_Text(m4_02);Tolstoi=2;*P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='4'){Send_Text(salto1);Send_Text(m4_03);Tolstoi=3;*P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='5'){Send_Text(salto1);Send_Text(m4_04);Tolstoi=4;*P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='6'){Send_Text(salto1);Send_Text(m4_05);Tolstoi=5;*P_M_switch=3; *P_flag_1=1; aux_menu=0;}
             
             if(aux_menu=='q'||aux_menu=='Q'){
-                menu_switch=0; 
-                flag_1=1; 
+                *P_M_switch=0; 
+                *P_flag_1=1; 
                 aux_menu=0;}
             break;
         
         case 32:
-            if(flag_1){
+            if(*P_flag_1){
                 Send_Text(salto1);
                 Send_Text(m4_102);
                 Send_Text(m4_00);
@@ -1000,23 +1060,23 @@ void menu_serie(bool *a, bool *b, uint8_t *c, uint8_t *d){
                 Send_Text(m4_04);
                 Send_Text(salida);
 
-                flag_1=0;}
+                *P_flag_1=0;}
 
-            if(aux_menu=='1'){Send_Text(salto1);Send_Text(m4_00);Tolstoi=0;menu_switch=3; flag_1=1; aux_menu=0;}//Cambiar PGA_V
-            if(aux_menu=='2'){Send_Text(salto1);Send_Text(m4_01);Tolstoi=1;menu_switch=3; flag_1=1; aux_menu=0;}//
-            if(aux_menu=='3'){Send_Text(salto1);Send_Text(m4_02);Tolstoi=2;menu_switch=3; flag_1=1; aux_menu=0;}//
-            if(aux_menu=='4'){Send_Text(salto1);Send_Text(m4_03);Tolstoi=3;menu_switch=3; flag_1=1; aux_menu=0;}//
-            if(aux_menu=='5'){Send_Text(salto1);Send_Text(m4_04);Tolstoi=4;menu_switch=3; flag_1=1; aux_menu=0;}//
+            if(aux_menu=='1'){Send_Text(salto1);Send_Text(m4_00);Tolstoi=0;*P_M_switch=3; *P_flag_1=1; aux_menu=0;}//Cambiar PGA_V
+            if(aux_menu=='2'){Send_Text(salto1);Send_Text(m4_01);Tolstoi=1;*P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
+            if(aux_menu=='3'){Send_Text(salto1);Send_Text(m4_02);Tolstoi=2;*P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
+            if(aux_menu=='4'){Send_Text(salto1);Send_Text(m4_03);Tolstoi=3;*P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
+            if(aux_menu=='5'){Send_Text(salto1);Send_Text(m4_04);Tolstoi=4;*P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
 
             if(aux_menu=='q'||aux_menu=='Q'){
-                menu_switch=0; 
-                flag_1=1; 
+                *P_M_switch=0; 
+                *P_flag_1=1; 
                 aux_menu=0;}
             break;
 
           
         case 4:
-            if(flag_1){
+            if(*P_flag_1){
                 Send_Text(salto1);
                 Send_Text(color_amarillo);
                 Send_Text(m5_0);
@@ -1024,41 +1084,41 @@ void menu_serie(bool *a, bool *b, uint8_t *c, uint8_t *d){
                 Send_Text(m5_2);
                 Send_Text(m5_3);
                 Send_Text(m10);
-                flag_1=0;}
+                *P_flag_1=0;}
         
-            if(aux_menu=='0'){menu_switch=0; flag_1=1; aux_menu=0;}
-            if(aux_menu=='1'){menu_switch=41;  aux_menu=0;}
-            if(aux_menu=='2'){menu_switch=42; flag_1=1; aux_menu=0;}
-            if(aux_menu=='3'){menu_switch=43; flag_1=1; aux_menu=0;}
+            if(aux_menu=='0'){*P_M_switch=0; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='1'){*P_M_switch=41;  aux_menu=0;}
+            if(aux_menu=='2'){*P_M_switch=42; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='3'){*P_M_switch=43; *P_flag_1=1; aux_menu=0;}
             break;
         
         case 41:
             Send_Text(m5_1); 
             Tolstoi=1;//Proporcional a Vrms
             aux_menu=0;
-            menu_switch=4;
-            flag_1=1;
+            *P_M_switch=4;
+            *P_flag_1=1;
             break;
         
         case 42:
             Send_Text(m5_2); 
             Tolstoi=2;//Proporcional a Irms
             aux_menu=0;
-            menu_switch=4;
-            flag_1=1;
+            *P_M_switch=4;
+            *P_flag_1=1;
             break;
         
-        case 43:
-                Send_Text(m5_3); 
-                Tolstoi=3;//Proporcional a VPeak
-                aux_menu=0;
-                menu_switch=4;
-                flag_1=1;
-                break;
+		case 43:
+        	Send_Text(m5_3); 
+			Tolstoi=3;//Proporcional a VPeak
+			aux_menu=0;
+			*P_M_switch=4;
+			*P_flag_1=1;
+			break;
                   
         case 5:
-          if(flag_1){
-                Send_Text(salto1);
+		  	if(*P_flag_1){
+           	    Send_Text(salto1);
                 Send_Text(color_reset);
                 Send_Text(m6_0);
                 Send_Text(m6_1);
@@ -1066,39 +1126,39 @@ void menu_serie(bool *a, bool *b, uint8_t *c, uint8_t *d){
                 Send_Text(m6_3);
                 Send_Text(m6_4);
                 Send_Text(m10) ;
-                flag_1=0;}
+                *P_flag_1=0;}
                 
-                if(aux_menu=='0'){menu_switch=0;  flag_1=1; aux_menu=0;}
-                if(aux_menu=='1'){
-                        Send_Text(salto1);Send_Text(m6_1);Send_Text(m815);
-                        menu_switch=51;  flag_1=1; aux_menu=0;auxiliar2=0;}
-                if(aux_menu=='2'){
-                        Send_Text(salto1);Send_Text(m6_2);Send_Text(m814);
-                        menu_switch=52; flag_1=1; aux_menu=0;auxiliar2=0;}
-                if(aux_menu=='3'){
-                        Send_Text(salto1);Send_Text(m6_3);Send_Text(m815);
-                        menu_switch=53; flag_1=1; aux_menu=0;auxiliar2=0;}
-                if(aux_menu=='4'){
-                        Send_Text(salto1);Send_Text(m6_4);Send_Text(m816);
-                        menu_switch=54; flag_1=1; aux_menu=0;auxiliar2=0;}
-        break;
+			if(aux_menu=='0'){*P_M_switch=0;  *P_flag_1=1; aux_menu=0;}
+			if(aux_menu=='1'){
+					Send_Text(salto1);Send_Text(m6_1);Send_Text(m815);
+					*P_M_switch=51;  *P_flag_1=1; aux_menu=0;auxiliar2=0;}
+			if(aux_menu=='2'){
+					Send_Text(salto1);Send_Text(m6_2);Send_Text(m814);
+					*P_M_switch=52; *P_flag_1=1; aux_menu=0;auxiliar2=0;}
+			if(aux_menu=='3'){
+					Send_Text(salto1);Send_Text(m6_3);Send_Text(m815);
+					*P_M_switch=53; *P_flag_1=1; aux_menu=0;auxiliar2=0;}
+			if(aux_menu=='4'){
+					Send_Text(salto1);Send_Text(m6_4);Send_Text(m816);
+					*P_M_switch=54; *P_flag_1=1; aux_menu=0;auxiliar2=0;}
+			break;
           
-        case 51: //sobre tension
-                if(aux_menu=='*'){
-                        Send_Text(salto1);
-                        Send_Text(m9);
-                        Tolstoi=numero_input();
-                        Send_Text(AuxBuffer);
-                        Send_Text(m015);
-                        menu_switch=5; 
-                        flag_1=1; 
-                        aux_menu=0;}
-                
-                if(aux_menu=='q'||aux_menu=='Q'){
-                        menu_switch=0; 
-                        flag_1=1; 
-                        aux_menu=5;}
-        break;
+		case 51: //sobre tension
+        	if(aux_menu=='*'){
+                Send_Text(salto1);
+				Send_Text(m9);
+				Tolstoi=numero_input();
+				Send_Text(AuxBuffer);
+				Send_Text(m015);
+				*P_M_switch=5; 
+				*P_flag_1=1; 
+				aux_menu=0;}
+		    
+			if(aux_menu=='q'||aux_menu=='Q'){
+				*P_M_switch=0; 
+				*P_flag_1=1; 
+				aux_menu=5;}
+        	break;
         
         case 52://sobre corriente
                 if(aux_menu=='*'){
@@ -1107,13 +1167,13 @@ void menu_serie(bool *a, bool *b, uint8_t *c, uint8_t *d){
                         Tolstoi=numero_input();
                         Send_Text(AuxBuffer);
                         Send_Text(m014);
-                        menu_switch=5; 
-                        flag_1=1; 
+                        *P_M_switch=5; 
+                        *P_flag_1=1; 
                         aux_menu=0;}
           
                 if(aux_menu=='q'||aux_menu=='Q'){
-                        menu_switch=0; 
-                        flag_1=1; 
+                        *P_M_switch=0; 
+                        *P_flag_1=1; 
                         aux_menu=5;}
                 break;
         
@@ -1124,13 +1184,13 @@ void menu_serie(bool *a, bool *b, uint8_t *c, uint8_t *d){
                         Tolstoi=numero_input();
                         Send_Text(AuxBuffer);
                         Send_Text(m015);
-                        menu_switch=5; 
-                        flag_1=1; 
+                        *P_M_switch=5; 
+                        *P_flag_1=1; 
                         aux_menu=0;}
                 
                 if(aux_menu=='q'||aux_menu=='Q'){
-                        menu_switch=0; 
-                        flag_1=1; 
+                        *P_M_switch=0; 
+                        *P_flag_1=1; 
                         aux_menu=5;}
         break;
         
@@ -1141,19 +1201,16 @@ void menu_serie(bool *a, bool *b, uint8_t *c, uint8_t *d){
                 Tolstoi=numero_input();
                 Send_Text(AuxBuffer);
                 Send_Text(m016);
-                menu_switch=5; 
-                flag_1=1; 
+                *P_M_switch=5; 
+                *P_flag_1=1; 
                 aux_menu=0;}
 
             if(aux_menu=='q'||aux_menu=='Q'){
-                menu_switch=0; 
-                flag_1=1; 
+                *P_M_switch=0; 
+                *P_flag_1=1; 
                 aux_menu=5;}
                 break;
 
     }
-    *a=flag_0;
-    *b=flag_1;
-    *c=menu_switch;
-    *d=Tolstoi;
+
 } 
