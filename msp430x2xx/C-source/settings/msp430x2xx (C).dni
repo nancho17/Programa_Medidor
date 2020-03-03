@@ -17,7 +17,7 @@ Counter0=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 [EEM Cycle Counter 1]
 Counter1=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 [DebugChecksum]
-Checksum=-336862765
+Checksum=-1907293255
 [CodeCoverage]
 Enabled=_ 0
 [DriverProfiling]
@@ -83,8 +83,10 @@ Category=_ 0
 Bp0=_ "Range" "Memory:0x2E" 0 "0x2f" 0 18 0 1 0 0 0 0 0 0
 Bp1=_ "Range" "Memory:0x2E" 0 "0x2f" 0 18 0 1 0 0 0 0 0 0
 Bp2=_ "Range" "Memory:0x2E" 0 "" 0 18 0 1 0 0 0 0 0 0
-Bp3=_ "STD_CODE" "{$PROJ_DIR$\msp430x2xx_fet_1.c}.1215.1" 1 0 0 0 "" 0 ""
-Count=4
+Bp3=_ "STD_CODE" "{$PROJ_DIR$\msp430x2xx_fet_1.c}.2271.1" 1 0 0 0 "" 0 ""
+Bp4=_ "STD_CODE" "{$PROJ_DIR$\msp430x2xx_fet_1.c}.2271.1" 1 0 0 0 "" 0 ""
+Bp5=_ "STD_CODE" "{$PROJ_DIR$\msp430x2xx_fet_1.c}.1461.1" 1 0 0 0 "" 0 ""
+Count=6
 [FET]
 Clock mode=46
 Extended Clock mode=1
