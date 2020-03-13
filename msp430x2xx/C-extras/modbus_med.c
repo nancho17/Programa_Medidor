@@ -94,9 +94,9 @@ static xMBFunctionHandler xFuncHandlers[MB_FUNC_HANDLERS_MAX] = {
 
     {MB_FUNC_OTHER_REPORT_SLAVEID, eMBFuncReportSlaveID},
 
-   // {MB_FUNC_READ_INPUT_REGISTER, eMBFuncReadInputRegister},
+    // {MB_FUNC_READ_INPUT_REGISTER, eMBFuncReadInputRegister},
 
-  	 {MB_FUNC_READ_HOLDING_REGISTER, eMBFuncReadHoldingRegister},
+    {MB_FUNC_READ_HOLDING_REGISTER, eMBFuncReadHoldingRegister},
 
 };
 
@@ -671,16 +671,17 @@ bool xMBPortSerialInit( uint8_t ucPort, uint32_t ulBaudRate, uint8_t ucDataBits,
         EnterCriticalSection(  );
         #endif
         /* Reset USART */
-        UCA1CTL1 |= UCSWRST;
+        //UCA1CTL1 |= UCSWRST;
         /* Initialize all UART registers */
-         UCA1CTL0 |=UxCTL;
+        UCA1CTL0 =0;
+        UCA1CTL0 |=UxCTL;
         /* CLK = ACLK */
         UCA1CTL1 |= UCSSEL0;
         
         /* Configure Baudrate  */
-        UCA1BR0 = 0x03;                         
-        UCA1BR1 = 0x00;                         
-        UCA1MCTL = UCBRS_3;                     // Modulation UCBRSx = 6 UCBRFx=13 Oversampling  
+        //UCA1BR0 = 0x03;                         
+        //UCA1BR1 = 0x00;                         
+        //UCA1MCTL = UCBRS_3;                     // Modulation UCBRSx = 6 UCBRFx=13 Oversampling  
         /* Enable UART */
         UC1IE |= UCA1RXIE; 
         /* Clear reset flag. */
@@ -759,8 +760,26 @@ bool xMBPortSerialGetByte( char * getByte )
     return true;
 }
 
+
+
+static bool bandera_485=false;
+void set_485_flag (bool a) {
+    
+    bandera_485=a;
+   }
+
 bool xMBPortSerialPutByte( char putByte){
+//485 rs485 RS485 
+
+    if(bandera_485){
+        P2OUT |=0xC0;//send
+        __delay_cycles(512); }
+
     UCA1TXBUF=putByte;
+
+    if(bandera_485){
+    __delay_cycles(1024);  
+    P2OUT &= ~0xC0; }  //recieve
     return true;
 }
 
@@ -896,7 +915,7 @@ eMBException prveMBError2Exception( eMBErrorCode eErrorCode )
     return eStatus;
 }
 /*Manejo de Registro modbus*/
-#define REG_HOLDING_NREGS 120    //60 Floats
+#define REG_HOLDING_NREGS 20    //60 Floats
 
 static uint16_t   usRegHoldingStart = 7000;
 static uint16_t   usRegHoldingBuf[REG_HOLDING_NREGS];

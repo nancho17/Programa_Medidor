@@ -260,11 +260,16 @@ eMBErrorCode    eMBPoll( void );
  */
 eMBErrorCode    eMBRegHoldingCB( uint8_t * pucRegBuffer, uint16_t usAddress, uint16_t usNRegs, eMBRegisterMode eMode );
 
+/*Metodos de obtencion y seteo*/
 
+//Obtener direccion de registrosregistros
 uint16_t * GetRegBuff (); //Convertir a func
 
+//Setear inicio de registros
 void SetRegStart (uint16_t start);
 
+// Set de flag de Puerto 485
+void set_485_flag(bool);
 
 
 /* ----------------------- Aux functions ----------------------------*/
