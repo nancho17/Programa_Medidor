@@ -73,7 +73,7 @@ eMBErrorCode eMBASCIIInit( uint8_t ucSlaveAddress, uint8_t ucPort, uint32_t ulBa
     {
         eStatus = MB_EPORTERR;
     }
-    else if( xMBPortTimersInit( MB_ASCII_TIMEOUT_SEC * 20000UL ) != true )
+    else if( xMBPortTimersInit( MB_ASCII_TIMEOUT_SEC * 32768 ) != true )
     {
         eStatus = MB_EPORTERR;
     }
@@ -130,6 +130,7 @@ eMBErrorCode eMBASCIISend( uint8_t ucSlaveAddress, const uint8_t * pucFrame, uin
         ucASCIIBuf[usSndBufferCount++] = usLRC;
 
         /* Activate the transmitter. */
+        vMBPortSerialEnable( false, false );
         eSndState = STATE_TX_START;
         vMBPortSerialEnable( false, true );
     }

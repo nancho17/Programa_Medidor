@@ -30,7 +30,7 @@
 /*--------- Numero de Version ----------*/
 #define HW_VERSION 	"1.00"
 #define Escribir_en_FLASH   0  // 0 Normal 1 Escribir setup por primera vez
-#define Menus_solo_rs232    1  // 1 Solo ingreso por 232 0 Ingreso segun menu
+#define Menus_solo_rs232    0  // 1 Solo ingreso por 232 0 Ingreso segun menu
 
 
 /*---------Custom_Pin_Functions----------*/
@@ -80,19 +80,20 @@
 
 /*---------Definicion de estructura---------*/
 typedef struct  {
-	uint32_t Resistores_VP_N;
-	uint32_t Shunt_IAP_N;
-	
-	uint16_t Offset_VP_N;
-	uint16_t Offset_IAP_N;
-	
-	uint8_t PGA_IA;
-	uint8_t PGA_V;
-	
-	uint8_t Cloop; // 1 Vrms 2 Irms 3 Voltaje Pico
-	
-	uint8_t Rele_Selec; //1 Sobre Tension 2 Sobre corriente 3 Sub Tension 4 Sub Potencia
-	uint32_t Rele_Value;
+    // boot_menu
+    //2
+    uint32_t Resistores_VP_N;
+    uint32_t Shunt_IAP_N;
+    //3
+    uint8_t PGA_IA;
+    uint8_t PGA_V;
+    //4
+    uint32_t voltaje_AVGAIN; //4,194,304
+    uint32_t corriente_AIGAIN; //4,194,304
+    uint32_t potencia_WGAIN; //4194304
+    //5
+    uint16_t proporcional_4_20_;
+    uint16_t offset_4_20_;
 		  
 } boot_menu;
 
@@ -121,7 +122,7 @@ void UART0_P3_config (void);
 bool PORT_send ( uint8_t);
 void Send_Text ( char*);
 int numero_input( void);
-//void menu_serie(bool*,bool*, uint8_t*,boot_menu *,float *);
+void menu_serie(bool*,bool*, uint8_t*,boot_menu *,float *);
 void menu_cliente(bool*,bool*, uint8_t*,estructura_cliente *,float *);
 
 /*---------NO_Optimized_Variables---------*/
@@ -285,19 +286,15 @@ int main(void)
 
     /*------Seteo parametros predeterminados ------*/
     boot_menu medidor_setup = {
-        911, //ohm                      Resistores_VP_N;
-        400, //miliohm                  Shunt_IAP_N
-
-        0,// Vp-n sin offset            Offset_VP_N
-        0,//IAp-n sin offset           Offset_IAP_N
-		
-        2,// PGA_IA Ganancia 2 
-        1,// PGA_V  Ganancia 1
-        
-        1,// proporcional a Vrms
-        
-        1,  // Rele acciona por sobretension
-        150, //Valor :150V
+        911,//Resistores_VP_N=911,
+        400,//Shunt_IAP_N=400,
+        2,//PGA_IA =2,
+        1,//PGA_V=1,
+        4194304,//voltaje_AVGAIN=4194304,
+        4194304,//corriente_AIGAIN=4194304,
+        4194304,//potencia_WGAIN=4194304,
+        1,//proporcional_4_20_ = 1,
+        0//offset_4_20 =0
 	};
 
 #if Escribir_en_FLASH == 1
@@ -308,7 +305,7 @@ int main(void)
         0,//paridad=0, 0 ninguna 1 impar 2 par 
         1,//bits_parada=0, 0 2bit 1 1bit
         5,//direccion_slave=5,
-        1,//modbus_modo=0, // 0 RTU 1 ANSCII
+        0,//modbus_modo=0, // 0 RTU 1 ANSCII
         0,//modbus_puerto=0 (485)     1 (232)
         1,//salida4_20=1; 1 Tension 2 Corriente 3 Potencia activa 4 Potencia reactiva 5 Frecuencia 6 Factor de Potencia
         1,//alarma4_20=1  1 Tension 2 Corriente 3 Potencia activa 4 Potencia reactiva 5 Frecuencia 6 Factor de Potencia
@@ -345,13 +342,7 @@ int main(void)
 
 #endif    
     
-    
-    
-    
-    
-    
-    
-    
+
     //Edicion
     estructura_cliente setup_editado;
     setup_editado=setup_inicial;
@@ -440,6 +431,9 @@ int main(void)
       
     /*Iniciadores de Menu Serie*/
     bool flag_0= false;			//Bandera del menu serie
+    bool flag_0_calib= false;		//Bandera del menu calbracion
+	bool flag_modbus= false;
+    
     bool flag_1= true;			//Manejo de submenus serie
     int8_t menu_switch=0;	//Posiciones del menu serie
     
@@ -463,12 +457,26 @@ int main(void)
                 }
             }
         }
+        
     }
+
+    if (!tick_10s_elapsed) {
+
+        for (int r=0;r<14;r=r+1){
+            if(AuxBuffer[r]=='s' || AuxBuffer[r]=='S'){
+                if(AuxBuffer[r+1]=='r' || AuxBuffer[r+1]=='R'){
+                    if(AuxBuffer[r+2]=='v' || AuxBuffer[r+2]=='V'){aux_menu=0; flag_0_calib=true; tick_10s_elapsed=true;}
+                }
+            }
+        }
+
+    }
+
     
     /*---------------Acciones Posguardado-------*/
     if(setup_editado.flag_GUARDAR  ){
-        setup_editado.flag_GUARDAR=0;
         setup_inicial=setup_editado;
+        setup_editado.flag_GUARDAR=0;
 
         FCTL2 = FWKEY + FSSEL0 + FN1;             // MCLK/3 for Flash Timing Generator (257 kHz a 476 kHz)
         estructura_cliente *Flash_ptr;                          // Flash pointer
@@ -542,12 +550,14 @@ int main(void)
             P2OUT &= ~ISL_R_ENABLE;
             P2OUT &= ~ISL_D_ENABLE; }
             set_485_flag(flag_485);
-       
+			flag_modbus=true;       
     }
 
     
     /* Escribir los valores por default */
-    
+//    if (flag_0_calib) {// con un flag
+//        menu_serie(&flag_0_calib,&flag_1,&menu_switch,&medidor_setup,Tabla_floats);
+//                }
     
             //else{ 		  	P6OUT&= 0xFF;}
     
@@ -619,7 +629,8 @@ int main(void)
             if (flag_0) {// con un flag
                 menu_cliente(&flag_0,&flag_1,&menu_switch,&setup_editado,Tabla_floats);
                 }
-            else if(tick_10s_elapsed){
+            else if(tick_10s_elapsed&&(!flag_0_calib)&&flag_modbus){
+			  flag_modbus=false;
               P6OUT &= ~ 0x01;
               /*Inicia Modbus*/ 
               eMBInit(setup_inicial.modbus_modo, setup_inicial.direccion_slave, 0, 9600, setup_inicial.paridad); //RTU  Direccion_de_esclavo:5 9600bps Paridad:Par     (para ASCII: MB_ASCII)
@@ -771,6 +782,10 @@ int main(void)
         *(regs+18)=pack.A[1];
         *(regs+19)=pack.A[0];
 
+        //
+        if (flag_0_calib) {// con un flag
+            menu_serie(&flag_0_calib,&flag_1,&menu_switch,&medidor_setup,Tabla_floats); }
+        //
         tick_200ms_elapsed = false; // Reset the flag (signal 'handled')
         }
 
@@ -793,7 +808,7 @@ int main(void)
     }
     
     /* Tarea Modbus! (Se activa si sale del menu)*/
-    if(tick_10s_elapsed&&(!flag_0)){
+    if(tick_10s_elapsed&&(!flag_0)&&(!flag_0_calib)){
         flag_2=false;
         eMBPoll();
     }	
@@ -1738,10 +1753,30 @@ void menu_cliente(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, estructur
 
 void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *Setup,float *Mediciones){
 
+  /*
+    boot_menu
+    //2
+    uint32_t Resistores_VP_N;
+    uint32_t Shunt_IAP_N;
+    //3
+    uint8_t PGA_IA;
+    uint8_t PGA_V;
+    //4
+    uint32_t voltaje_AVGAIN; //4,194,304
+    uint32_t corriente_AIGAIN; //4,194,304
+    uint32_t potencia_WGAIN; //4194304
+    //5
+    uint16_t 4_20_proporcional;
+    uint16_t 4_20_offset
+  */
+  
+  
     /* --- Variables --- */
-    char enter[16], floaterr[16];
+    char enter[16];
+    //char floaterr[16];
+    char     Fbuffer[16];
     float muestra_float;
-    
+    uint32_t muestra_int;
     /* --- Escritos --- */
     char FORM_FEED_T[]="\f";
     char salto1 []="\n\r";
@@ -1751,7 +1786,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
     char color_cyan[]	 	= "\033[0;36;40m";
     char color_reset[]		="\033[m";
     
-    char m0 []="Menu Principal\n\r";
+    char m0 []="Menu Calibracion\n\r";
     char m1 []="1.Visualizador de variables\n\r";
     char m2 []="2.Editar resistencias en uso\n\r";
     char m3 []="3.Editar registros de ganancia\n\r";
@@ -1760,6 +1795,20 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
 
     char m_ESC[]="ESC: Menu principal.\n \r \n \r";    
     char m_ins[]="insertado\n\r";
+    char m_EXIT[]="\n\r----------Menu Cerrado----------\n\r";
+    
+       
+    /* VISUALIZACION DE VARIABLES */
+    char m1_0[]="* VISUALIZACION DE VARIABLES *\n\r";
+    char m1_1[]="Tensión (V): ";
+    char m1_2[]="Corriente (A): ";
+    char m1_3[]="Potencia Activa (W): ";
+    char m1_4[]="Potencia Reactiva (W): ";
+    char m1_5[]="Frecuencia (Hz): ";
+    char m1_6[]="Factor de potencia: ";
+    char m1_7[]="Totalizado(kWh): ";
+ 
+    
     /* char m2 []="2.Editar resistencias en uso\n\r"; */
     char m2_1[]="1.Resistores de VP - VN (ohms): ";
     char m2_10[]="Inserte valor de resitencia en ohms\n\r";
@@ -1793,14 +1842,19 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
     char m4_003 []="Valor actual de WGAIN : ";
     
     char m4_10 []="Inserte nuevo valor del registro AVGAIN\n\r";
-    
     //    char m4_6[]="Ingrese nuevo valor del registro\n\r";
+
+    char m5_0 []="Menu - Calibracion de salida 4-20 mA:\n\r";
+    char m5_1 []="1. Modificar proporcionalidad: ajuste_proporcional \n\r";
+    char m5_2 []="2. Modificar offset: ajuste_offset \n\r";
+    char m5_E []="((\033[0;32;40mValor_a_representar\033[m*\033[0;36;40majuste_proporcional\033[m)+\033[0;36;40majuste_offset\033[m) = SALIDA_DAC \n\r";
     
-    
-    
+    char m5_01 []="Insertar nuevo valor de ajuste_proporcional\n\r Valor actual: \n\r";
+    char m5_02 []="Insertar nuevo valor de ajuste_offset\n\r Valor actual: \n\r";
+
     switch(*P_M_switch){
         case 0:
-            if(P_flag_1){
+            if(*P_flag_1){
                 Send_Text(FORM_FEED_T);
                 Send_Text(color_verde);
                 Send_Text(m0);
@@ -1811,13 +1865,71 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 *P_flag_1=0; }
         
             if(aux_menu=='0'){*P_M_switch=0; *P_flag_1=1; aux_menu=0; }
-            if(aux_menu=='1'){*P_M_switch=1; *P_flag_1=1; aux_menu=0; Send_Text(FORM_FEED_T);}
+            if(aux_menu=='1'){*P_M_switch=1; *P_flag_1=1; aux_menu=0; }
             if(aux_menu=='2'){*P_M_switch=2; *P_flag_1=1; aux_menu=0; }
-            if(aux_menu=='3'){*P_M_switch=3; *P_flag_1=1; aux_menu=0; Send_Text(FORM_FEED_T);}
-            if(aux_menu=='4'){*P_M_switch=4; *P_flag_1=1; aux_menu=0; Send_Text(FORM_FEED_T);}
-            if(aux_menu=='5'){*P_M_switch=5; *P_flag_1=1; aux_menu=0; Send_Text(FORM_FEED_T);}
+            if(aux_menu=='3'){*P_M_switch=3; *P_flag_1=1; aux_menu=0; }
+            if(aux_menu=='4'){*P_M_switch=4; *P_flag_1=1; aux_menu=0; }
+            if(aux_menu=='5'){*P_M_switch=5; *P_flag_1=1; aux_menu=0; }
+            if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
+                Send_Text(m_EXIT);
+                *P_flag_0=0; }
             break;
-        
+
+        case 1:
+            if(*P_flag_1){
+            Send_Text(color_verde);
+            Send_Text(FORM_FEED_T);
+            Send_Text(color_verde);
+            Send_Text(m1_0);
+            Send_Text(color_reset);
+
+            Send_Text(m1_1);
+            muestra_float=*(Mediciones+1) ;//+1 Voltaje RMS
+            snprintf(Fbuffer, sizeof(Fbuffer), "%f",  muestra_float);
+            Send_Text(Fbuffer); Send_Text(salto1);
+
+            Send_Text(m1_2);
+            muestra_float=*(Mediciones+4) ;//+4 Corriente RMS 
+            snprintf(Fbuffer, sizeof(Fbuffer), "%f",  muestra_float);
+            Send_Text(Fbuffer); Send_Text(salto1);
+
+
+            Send_Text(m1_3);
+            muestra_float=*(Mediciones+5) ;//+5 Potencia Activa
+            snprintf(Fbuffer, sizeof(Fbuffer), "%f",  muestra_float);
+            Send_Text(Fbuffer); Send_Text(salto1);
+
+            Send_Text(m1_4);
+            muestra_float=*(Mediciones+6) ;//+6 Potencia Reactiva
+            snprintf(Fbuffer, sizeof(Fbuffer), "%f",  muestra_float);
+            Send_Text(Fbuffer); Send_Text(salto1);
+
+            Send_Text(m1_5);
+            muestra_float=*(Mediciones+12) ;//+12 Frecuencia
+            snprintf(Fbuffer, sizeof(Fbuffer), "%f",  muestra_float);
+            Send_Text(Fbuffer); Send_Text(salto1);
+
+            Send_Text(m1_6);
+            muestra_float=*(Mediciones+11) ;//+11 Factor de potencia
+            snprintf(Fbuffer, sizeof(Fbuffer), "%f",  muestra_float);
+            Send_Text(Fbuffer); Send_Text(salto1);
+
+            Send_Text(m1_7);
+            muestra_float=*(Mediciones+10) ;//+10 Energia KWh (Totalizado)
+            snprintf(Fbuffer, sizeof(Fbuffer), "%f",  muestra_float);
+            Send_Text(Fbuffer); Send_Text(salto1);
+
+            Send_Text(salto1);
+            Send_Text(color_cyan);
+            Send_Text(m_ESC);
+            Send_Text(color_reset);
+            *P_flag_1=0;}
+
+            contador_medidores++;
+            if(contador_medidores>3){  contador_medidores=0;*P_M_switch=1; *P_flag_1=1; }
+            if(aux_menu==0x1B){*P_M_switch=0; *P_flag_1=1; aux_menu=0;}
+            break;
+            
         case 2:
             if(*P_flag_1){
               
@@ -1833,8 +1945,12 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 Send_Text(m2_2);
                 snprintf(enter, sizeof(enter), "%d", 0, Setup->Shunt_IAP_N);
                 Send_Text(enter); Send_Text(salto1);
-        
+                
+                Send_Text(salto1);
+                Send_Text(color_cyan);      
                 Send_Text(m_ESC);
+                Send_Text(color_reset);      
+                
                 *P_flag_1=0;
                 }
             if(aux_menu=='0'||aux_menu==0x1B){*P_M_switch=0; *P_flag_1=1; aux_menu=0;}
@@ -1865,7 +1981,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
                 *P_M_switch=2; 
                 *P_flag_1=1; 
-                aux_menu=1;}
+                aux_menu=0;}
             break;
 
         case 22:
@@ -1884,22 +2000,21 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 Setup->Shunt_IAP_N=numero_input();//Editar Resistores IA
                 *P_M_switch=2; 
                 *P_flag_1=1; 
-                aux_menu=1;}
+                aux_menu=0;}
         
             if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
             *P_M_switch=2; 
             *P_flag_1=1; 
-            aux_menu=1;}
+            aux_menu=0;}
             break;
             
         case 3:
             if(*P_flag_1){
-                Send_Text(salto1);
+                Send_Text(FORM_FEED_T);
                 Send_Text(color_verde);
-                Send_Text(m4);
+                Send_Text(m3);
                 Send_Text(color_reset);
         
-                Send_Text(color_cyan);
                 Send_Text(m3_1);
                 switch(Setup->PGA_IA){
                     case 1:Send_Text(GM3_1);break;
@@ -1916,6 +2031,8 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                     case 3:Send_Text(GM3_3);break;
                     case 4:Send_Text(GM3_4);break; }
         
+            Send_Text(salto1);
+            Send_Text(color_cyan);
             Send_Text(m_ESC);
             Send_Text(color_reset);
             *P_flag_1=0;}
@@ -1985,15 +2102,17 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 Send_Text(m4_1);
                 Send_Text(m4_2);
                 Send_Text(m4_3);
-    
-            Send_Text(m_ESC);
-            *P_flag_1=0; }
+                
+                Send_Text(salto1);
+                Send_Text(color_cyan);
+                Send_Text(m_ESC);
+                Send_Text(color_reset);
+                *P_flag_1=0; }
             
-            contador_medidores++;
-            if(contador_medidores>3){  contador_medidores=0;*P_M_switch=6; *P_flag_1=1; aux_menu=0; }
             if(aux_menu=='0'||aux_menu==0x1B){*P_M_switch=0; *P_flag_1=1; aux_menu=0; }
-            if(aux_menu=='1'){*P_M_switch=41; *P_flag_1=1; aux_menu=0;auxiliar2=0; contador_medidores=999;} 
+            if(aux_menu=='1'){*P_M_switch=41; *P_flag_1=1; aux_menu=0;auxiliar2=0; } 
             if(aux_menu=='2'){*P_M_switch=42; *P_flag_1=1; aux_menu=0;auxiliar2=0;} 			
+            if(aux_menu=='3'){*P_M_switch=43; *P_flag_1=1; aux_menu=0;auxiliar2=0;} 			
             break;
             
         case 41: //Calibrar Tension
@@ -2002,12 +2121,9 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
 
             Send_Text(FORM_FEED_T);
             Send_Text(m4_1);
-//          muestra_float=*(Mediciones+1) ;//+1 Voltaje RMS
-//          snprintf(floaterr, sizeof(floaterr), "%f",  muestra_float);
-//          Send_Text(floaterr); Send_Text(salto1);
             Send_Text(m4_001);
-            muestra_float=6;
-            snprintf(enter, sizeof(enter), "%d", 0, muestra_float);
+            muestra_int = Setup->voltaje_AVGAIN ;
+            snprintf(enter, sizeof(enter), "%ld", 0, muestra_int);
             Send_Text(enter); Send_Text(salto1);
             Send_Text(m4_10);Send_Text(salto1);
             Send_Text(m_ESC);
@@ -2015,20 +2131,21 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             }
 
             if(aux_menu=='*'||aux_menu==0xD){
+            Setup->voltaje_AVGAIN =numero_input();//numero_input();
             Send_Text(salto1);
             Send_Text(color_amarillo);
             Send_Text(m_ins);
             Send_Text(color_reset);
             //Setup->Rele_Selec=1;
             //Setup->Rele_Value=numero_input();
-            *P_M_switch=6; 
+            *P_M_switch=4; 
             *P_flag_1=1; 
             aux_menu=0;}
 
             if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
-            *P_M_switch=0; 
+            *P_M_switch=4; 
             *P_flag_1=1; 
-            aux_menu=6;}
+            aux_menu=0;}
             break;
             
         case 42: //Calibrar Corriente
@@ -2036,8 +2153,9 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             Send_Text(FORM_FEED_T);
             Send_Text(m4_2);
             Send_Text(m4_002);
-            muestra_float=6;
-            snprintf(enter, sizeof(enter), "%d", 0, muestra_float);
+            muestra_int = Setup->corriente_AIGAIN ;
+            snprintf(enter, sizeof(enter), "%ld", 0, muestra_int);
+            
             Send_Text(enter); Send_Text(salto1);
             Send_Text(m4_10);Send_Text(salto1);
             Send_Text(m_ESC);
@@ -2045,27 +2163,28 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             }
 
             if(aux_menu=='*'||aux_menu==0xD){
+            Setup->corriente_AIGAIN =numero_input();
             Send_Text(salto1);
             Send_Text(color_amarillo);
             Send_Text(m_ins);
             Send_Text(color_reset);
-            *P_M_switch=6; 
+            *P_M_switch=4; 
             *P_flag_1=1; 
             aux_menu=0;}
 
             if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
-            *P_M_switch=0; 
+            *P_M_switch=4; 
             *P_flag_1=1; 
-            aux_menu=6;}
+            aux_menu=0;}
             break;
             
         case 43: //Calibrar Potencia activa
             if(*P_flag_1){
             Send_Text(FORM_FEED_T);
-            Send_Text(m4_2);
-            Send_Text(m4_002);
-            muestra_float=6;
-            snprintf(enter, sizeof(enter), "%d", 0, muestra_float);
+            Send_Text(m4_3);
+            Send_Text(m4_003);
+            muestra_int = Setup->potencia_WGAIN ;
+            snprintf(enter, sizeof(enter), "%ld", 0, muestra_int);
             Send_Text(enter); Send_Text(salto1);
             Send_Text(m4_10);Send_Text(salto1);
             Send_Text(m_ESC);
@@ -2073,20 +2192,98 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             }
 
             if(aux_menu=='*'||aux_menu==0xD){
+            Setup->potencia_WGAIN  =numero_input();
             Send_Text(salto1);
             Send_Text(color_amarillo);
             Send_Text(m_ins);
             Send_Text(color_reset);
-            *P_M_switch=6; 
+            *P_M_switch=4; 
             *P_flag_1=1; 
             aux_menu=0;}
 
             if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
-            *P_M_switch=0; 
+            *P_M_switch=4; 
             *P_flag_1=1; 
-            aux_menu=6;}
+            aux_menu=0;}
             break;
             
+            
+        case 5:
+            if(*P_flag_1){
+            Send_Text(FORM_FEED_T);
+            Send_Text(color_verde);
+            Send_Text(m5_0);
+            Send_Text(color_reset);
+
+            Send_Text(m5_1);
+            Send_Text(m5_2);
+            Send_Text(m5_E);
+
+            Send_Text(salto1);
+            Send_Text(color_cyan);
+            Send_Text(m_ESC);
+            Send_Text(color_reset);
+
+            *P_flag_1=0; }
+
+            if(aux_menu=='0'||aux_menu==0x1B){*P_M_switch=0; *P_flag_1=1; aux_menu=0; }
+            if(aux_menu=='1'){*P_M_switch=51; *P_flag_1=1; aux_menu=0;auxiliar2=0; } 
+            if(aux_menu=='2'){*P_M_switch=52; *P_flag_1=1; aux_menu=0;auxiliar2=0;} 			
+            break;
+            
+        case 51: //Calibrar proporcional
+            if(*P_flag_1){
+            Send_Text(FORM_FEED_T);
+            Send_Text(m5_01);
+            muestra_float= Setup->proporcional_4_20_;
+            snprintf(enter, sizeof(enter), "%f", muestra_float);
+            Send_Text(enter); Send_Text(salto1);
+            Send_Text(m_ESC);
+            *P_flag_1=0;
+            }
+
+            if(aux_menu=='*'||aux_menu==0xD){
+            Setup->proporcional_4_20_ =numero_input();
+            Send_Text(salto1);
+            Send_Text(color_amarillo);
+            Send_Text(m_ins);
+            Send_Text(color_reset);
+            *P_M_switch=5; 
+            *P_flag_1=1; 
+            aux_menu=0;}
+
+            if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
+            *P_M_switch=5; 
+            *P_flag_1=1; 
+            aux_menu=0;}
+            break;
+            
+        case 52: //Calibrar offset
+            if(*P_flag_1){
+            Send_Text(FORM_FEED_T);
+            Send_Text(m5_02);
+            muestra_float= Setup->offset_4_20_;
+            snprintf(enter, sizeof(enter), "%f", muestra_float);
+            Send_Text(enter); Send_Text(salto1);
+            Send_Text(m_ESC);
+            *P_flag_1=0;
+            }
+
+            if(aux_menu=='*'||aux_menu==0xD){
+            Setup->offset_4_20_ =numero_input();
+            Send_Text(salto1);
+            Send_Text(color_amarillo);
+            Send_Text(m_ins);
+            Send_Text(color_reset);
+            *P_M_switch=5; 
+            *P_flag_1=1; 
+            aux_menu=0;}
+
+            if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
+            *P_M_switch=5; 
+            *P_flag_1=1; 
+            aux_menu=0;}
+            break;
             
             
     }

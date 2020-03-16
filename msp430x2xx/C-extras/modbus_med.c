@@ -391,8 +391,10 @@ eMBErrorCode eMBRTUSend( uint8_t ucSlaveAddress, const uint8_t * pucFrame, uint1
         ucRTUBuf[usSndBufferCount++] = ( uint8_t )( usCRC16 >> 8 );
 
         /* Activate the transmitter. */
+        vMBPortSerialEnable( false, false ); 
         eSndState = STATE_TX_XMIT;
         vMBPortSerialEnable( false, true );
+   
     }
     else
     {
@@ -457,6 +459,8 @@ bool xMBRTUReceiveFSM( void )
     uint8_t           ucByte;
 
     assert( eSndState == STATE_TX_IDLE );
+  //  if( eSndState == STATE_TX_IDLE )
+  //      {return xTaskNeedSwitch;}
 
     /* Always read the character. */
     ( void )xMBPortSerialGetByte( ( char * ) & ucByte );
@@ -539,6 +543,7 @@ bool xMBRTUTransmitFSM( void )
              * empty interrupt. */
             vMBPortSerialEnable( true, false );
             eSndState = STATE_TX_IDLE;
+
         }
         break;
     }
