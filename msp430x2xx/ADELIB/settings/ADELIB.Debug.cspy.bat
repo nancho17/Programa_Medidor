@@ -25,7 +25,7 @@ if not "%1" == "" goto debugFile
 
 @echo on 
 
-"C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\common\bin\cspybat" -f "C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\ADELIB\settings\ADELIB.Debug.general.xcl" --backend -f "C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\ADELIB\settings\ADELIB.Debug.driver.xcl" 
+"C:\Archivos de programa\IAR Systems\Embedded Workbench 7.2\common\bin\cspybat" -f "C:\MEI-300V\Programa_Medidor-master\msp430x2xx\ADELIB\settings\ADELIB.Debug.general.xcl" --backend -f "C:\MEI-300V\Programa_Medidor-master\msp430x2xx\ADELIB\settings\ADELIB.Debug.driver.xcl" 
 
 @echo off 
 goto end 
@@ -34,7 +34,7 @@ goto end
 
 @echo on 
 
-"C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\common\bin\cspybat" -f "C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\ADELIB\settings\ADELIB.Debug.general.xcl" "--debug_file=%1" --backend -f "C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\ADELIB\settings\ADELIB.Debug.driver.xcl" 
+"C:\Archivos de programa\IAR Systems\Embedded Workbench 7.2\common\bin\cspybat" -f "C:\MEI-300V\Programa_Medidor-master\msp430x2xx\ADELIB\settings\ADELIB.Debug.general.xcl" "--debug_file=%1" --backend -f "C:\MEI-300V\Programa_Medidor-master\msp430x2xx\ADELIB\settings\ADELIB.Debug.driver.xcl" 
 
 @echo off 
 :end

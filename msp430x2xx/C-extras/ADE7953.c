@@ -1,7 +1,7 @@
 #include "ADE7953.h"
 
 
-static bool wellsended=0;
+static bool wellsended=1;
 
 int get_wellsended(){
     return wellsended;
@@ -14,11 +14,15 @@ void set_wellsended(int well){
 
 bool Escritura_ADE795 ( uint8_t alfa){    
     /*UCAxTXIFG is automatically reset if a character is written to UCAxTXBUF.*/
+ // __disable_interrupt();
     if (IFG2&UCA0TXIFG){ 
-        UCA0TXBUF =alfa;	
+        UCA0TXBUF =alfa;
+		__enable_interrupt();
         return 1;
     }
+//	__enable_interrupt();
     return 0;
+	
 }
 
 /* Funciones Escritura */

@@ -2,80 +2,75 @@
 
 <project>
   <fileVersion>2</fileVersion>
-  <fileChecksum>2411136170</fileChecksum>
+  <fileChecksum>1012922278</fileChecksum>
   <configuration>
     <name>Debug</name>
     <outputs>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\stdbool.h</file>
-      <file>$TOOLKIT_DIR$\inc\msp430.h</file>
-      <file>$PROJ_DIR$\Debug\Obj\ADE7953.pbi</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Product.h</file>
-      <file>$TOOLKIT_DIR$\inc\intrinsics.h</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\yvals.h</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Threads.h</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Defaults.h</file>
-      <file>$PROJ_DIR$\..\C-extras\ADE7953.h</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\stdint.h</file>
-      <file>$PROJ_DIR$\..\C-extras\ADE7953.c</file>
-      <file>$PROJ_DIR$\Debug\Exe\ADELIB.ulp</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\xencoding_limits.h</file>
-      <file>$PROJ_DIR$\Debug\Obj\ADE7953.__cstat.et</file>
-      <file>$PROJ_DIR$\Debug\Obj\ADELIB.pbd</file>
-      <file>$PROJ_DIR$\Debug\Exe\ADELIB.r43</file>
       <file>$TOOLKIT_DIR$\lib\dlib\dl430xlsfn.h</file>
-      <file>$TOOLKIT_DIR$\inc\dlib\c\ycheck.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Threads.h</file>
       <file>$TOOLKIT_DIR$\inc\in430.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\ADELIB.pbd</file>
+      <file>$TOOLKIT_DIR$\inc\msp430.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\stdint.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\xencoding_limits.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\stdbool.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Product.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\ADE7953.__cstat.et</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\ycheck.h</file>
+      <file>$PROJ_DIR$\Debug\Exe\ADELIB.r43</file>
+      <file>$TOOLKIT_DIR$\inc\intrinsics.h</file>
+      <file>$PROJ_DIR$\..\C-extras\ADE7953.c</file>
+      <file>$PROJ_DIR$\Debug\Obj\ADE7953.pbi</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\yvals.h</file>
       <file>$PROJ_DIR$\Debug\Obj\ADE7953.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Defaults.h</file>
       <file>$TOOLKIT_DIR$\inc\msp430f2618.h</file>
+      <file>$PROJ_DIR$\..\C-extras\ADE7953.h</file>
     </outputs>
     <file>
-      <name>$PROJ_DIR$\..\C-extras\ADE7953.c</name>
+      <name>[ROOT_NODE]</name>
       <outputs>
         <tool>
-          <name>BICOMP</name>
-          <file> 2</file>
-        </tool>
-        <tool>
-          <name>ICC430</name>
-          <file> 19</file>
-        </tool>
-        <tool>
-          <name>__cstat</name>
-          <file> 13</file>
+          <name>XAR</name>
+          <file> 11</file>
         </tool>
       </outputs>
-      <inputs>
-        <tool>
-          <name>BICOMP</name>
-          <file> 17 18 3 20 0 7 6 16 5 9 1 12 4 8</file>
-        </tool>
-        <tool>
-          <name>ICC430</name>
-          <file> 8 9 17 5 7 16 3 12 6 0 1 20 18 4</file>
-        </tool>
-      </inputs>
     </file>
     <file>
       <name>$PROJ_DIR$\Debug\Exe\ADELIB.r43</name>
       <inputs>
         <tool>
           <name>XAR</name>
-          <file> 19</file>
+          <file> 16</file>
         </tool>
       </inputs>
     </file>
     <file>
-      <name>[ROOT_NODE]</name>
+      <name>$PROJ_DIR$\..\C-extras\ADE7953.c</name>
       <outputs>
         <tool>
-          <name>XAR</name>
-          <file> 15</file>
+          <name>ICC430</name>
+          <file> 16</file>
         </tool>
         <tool>
-          <name>ULP430</name>
-          <file> 11</file>
+          <name>__cstat</name>
+          <file> 9</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 14</file>
         </tool>
       </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 19 5 10 15 17 0 8 6 1 7 4 18 2 12</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 15 7 1 17 0 10 8 18 2 5 4 6 12 19</file>
+        </tool>
+      </inputs>
     </file>
   </configuration>
   <configuration>
@@ -84,6 +79,9 @@
     <forcedrebuild>
       <name>[MULTI_TOOL]</name>
       <tool>XLINK</tool>
+    </forcedrebuild>
+    <forcedrebuild>
+      <name>[REBUILD_ALL]</name>
     </forcedrebuild>
   </configuration>
 </project>

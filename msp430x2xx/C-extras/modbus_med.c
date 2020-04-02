@@ -391,7 +391,7 @@ eMBErrorCode eMBRTUSend( uint8_t ucSlaveAddress, const uint8_t * pucFrame, uint1
         ucRTUBuf[usSndBufferCount++] = ( uint8_t )( usCRC16 >> 8 );
 
         /* Activate the transmitter. */
-        vMBPortSerialEnable( false, false ); 
+		vMBPortSerialEnable( false, false ); // borrar
         eSndState = STATE_TX_XMIT;
         vMBPortSerialEnable( false, true );
    
