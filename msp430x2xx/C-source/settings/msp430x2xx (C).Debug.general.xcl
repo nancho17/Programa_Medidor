@@ -1,10 +1,10 @@
-"C:\Archivos de programa\IAR Systems\Embedded Workbench 7.2\430\bin\430proc.dll" 
+"C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\bin\430proc.dll" 
 
-"C:\Archivos de programa\IAR Systems\Embedded Workbench 7.2\430\bin\430fet.dll" 
+"C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\bin\430fet.dll" 
 
-"C:\MEI-300V\Programa_Medidor-master\msp430x2xx\C-source\Debug\Exe\msp430x2xx (C).d43" 
+"C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\C-source\Debug\Exe\msp430x2xx (C).d43" 
 
---plugin "C:\Archivos de programa\IAR Systems\Embedded Workbench 7.2\430\bin\430bat.dll" 
+--plugin "C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\bin\430bat.dll" 
 
 
 

@@ -982,7 +982,7 @@ void menu_cliente(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, estructur
    // char espacios []="  ";
     char error []="\n\r    ----------- Error -----------    \n\r \n\r \n\r  ";
     
-    char m0_0 []="PROSER MEU - 380V,S/N:SV-0500003 - VER: ";
+    char m0_0 []="PROSER MENÚ - 380V,S/N:SV-0500003 - VER: ";
     char m0_00[]=HW_VERSION;
     char m0_1 []="\n\r* MENU PRINCIPAL *\n\r";
     
@@ -1103,7 +1103,7 @@ void menu_cliente(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, estructur
     char m4_S_0[]="INACTIVA\n\r\n\r";
     char m4_S_1[]="ACTIVA\n\r \n\r";
     
-    char m4_L[]="L:Limite para acivaccion: ";//100
+    char m4_L[]="L:Limite para activación: ";//100
 
     char m4_L_0[]="Inserte valor de la variable para limite de activacion\n\r"; 
     char m4_L_1[]="Variable ingresada\n\r";//100
@@ -2288,5 +2288,3 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             
     }
 }
-
-
