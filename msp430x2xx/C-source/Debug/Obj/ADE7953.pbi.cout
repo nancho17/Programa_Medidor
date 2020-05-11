@@ -1,4 +1,4 @@
-"C:\MEI-300V\Programa_Medidor-master\msp430x2xx\C-extras\ADE7953.c"
+"C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\C-extras\ADE7953.c"
 -std=c99
 -ferror-limit=100
 -I
@@ -8,11 +8,11 @@ C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc\dlib\c
 -I
 C:\MEI-300V\Programa_Medidor-master\msp430x2xx\C-extras
 -I
-C:\Archivos de programa\IAR Systems\Embedded Workbench 7.2\430\inc\dlib
+C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc\dlib
 -I
-C:\Archivos de programa\IAR Systems\Embedded Workbench 7.2\430\inc
+C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc
 -I
-C:\Archivos de programa\IAR Systems\Embedded Workbench 7.2\430\inc\dlib\c
+C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\inc\dlib\c
 -I
 C:\Proyects\Programas en IAR\MedidorFirmw\msp430x2xx\C-extras
 -I
@@ -254,8 +254,8 @@ C:\MEI-300V\Programa_Medidor-master\msp430x2xx\C-extras
 -D__EDG_SYSV=0
 -D__EDG_ANSIC=1
 -D__EDG_CPP11_IL_EXTENSIONS_SUPPORTED=1
--D_DLIB_CONFIG_FILE_HEADER_NAME="C:\Archivos de programa\IAR Systems\Embedded Workbench 7.2\430\lib\dlib\dl430xlsfn.h"
--D_DLIB_CONFIG_FILE_STRING="C:\\Archivos de programa\\IAR Systems\\Embedded Workbench 7.2\\430\\lib\\dlib\\dl430xlsfn.h"
+-D_DLIB_CONFIG_FILE_HEADER_NAME="C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.2\430\lib\dlib\dl430xlsfn.h"
+-D_DLIB_CONFIG_FILE_STRING="C:\\Program Files (x86)\\IAR Systems\\Embedded Workbench 7.2\\430\\lib\\dlib\\dl430xlsfn.h"
 -D__VERSION__="IAR C/C++ Compiler V6.30.1.934/W32 for MSP430"
 -D__CODE_MEMORY_LIST1__()=__CODE_MEM_HELPER1__(__code, 0 )
 -D__CODE_MEMORY_LIST2__(_P1)=__CODE_MEM_HELPER2__(__code, 0 ,  _P1 )
