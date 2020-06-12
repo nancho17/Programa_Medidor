@@ -134,6 +134,7 @@ void UART0_P3_config (void);
 bool PORT_send ( uint8_t);
 void Send_Text ( char*);
 int numero_input( void);
+float flt_input(void);
 void menu_serie(bool*,bool*, uint8_t*,boot_menu *,float *);
 void menu_cliente(bool*,bool*, uint8_t*,estructura_cliente *,float *);
 
@@ -149,13 +150,15 @@ static volatile bool tick_200ms_elapsed = false;
 static volatile bool tick_100ms_elapsed = false;
 
 static volatile bool tick_10s_elapsed = false;
+static volatile bool tick_40s_elapsed = false;
+
 
 
 /*---------Global_Variables---------*/
 
 static uint8_t DATA_ADE[3];     // Buffer RX0
 
-double E_Acumulator=0;          // Variable para almacenar datos de energía medida (En Joules)
+long double E_Acumulator=0;          // Variable para almacenar datos de energía medida (En Joules)
 
 uint8_t TablaDatos[47];  	// Tabla con datos de los registros del ADE7953ade
 
@@ -177,16 +180,16 @@ bool flag_485= false;		//Bandera del menu serie - 485
 
 /*Funcion que maneja la interrucpion del tmer 0*/
 
-void Ten_Second_Waiter(void)
-{
-    ms_ticks++;
-   if (ms_ticks > 9 ) {
-        tick_10s_elapsed = false; 
-        ms_ticks=0;
-        }
-   
-        CCR0+=32768; // El timer interrumpe cada 1 s
-}
+//void Ten_Second_Waiter(void)
+//{
+//    ms_ticks++;
+//   if (ms_ticks > 9 ) {
+//        tick_10s_elapsed = false; 
+//        ms_ticks=0;
+//        }
+//   
+//        CCR0+=32768; // El timer interrumpe cada 1 s
+//}
 
 void Time_Handler_1(void)
 {
@@ -214,12 +217,22 @@ void Time_Handler_2(void) {
         ms2_ticks=0;
     }
     
-    if (ten_ms_ticks < 100 ) {
+    if (ten_ms_ticks < 400 ) {
         ten_ms_ticks++; //10s
     }
     else {
-        tick_10s_elapsed = true;
+        tick_40s_elapsed = true;
+        ten_ms_ticks=0;
     }
+
+    
+     if (ten_ms_ticks > 100 ) {
+       tick_10s_elapsed = true;
+     }
+    
+    
+    
+    
     CCR1+=3276; // El timer interrumpe cada 100 ms
 }
 
@@ -434,6 +447,16 @@ int main(void)
 #endif				
         
 
+
+        
+
+            
+    long double *Flash_ptr7;                          // Flash pointer
+    Flash_ptr7 = (long double*)0x1000;               // Initialize Flash pointer Segment D
+    E_Acumulator = *Flash_ptr7 ;
+
+        
+        
     /*Delay*/
 	UCA0TXBUF=0;
     for (int r=0;r<2;r=r+1)
@@ -518,6 +541,23 @@ int main(void)
     if( calibracion_setup.flag_GUARDA_CALIB && flag_0_calib) {
     calibracion_setup.flag_GUARDA_CALIB=0;
     be=52;
+
+    FCTL2 = FWKEY + FSSEL0 + FN1;             // MCLK/3 for Flash Timing Generator (257 kHz a 476 kHz)
+    estructura_cliente *Flash_ptr;                          // Flash pointer
+
+    Flash_ptr = (estructura_cliente*)0x1040;               // Initialize Flash pointer
+    FCTL3 = FWKEY;                            // Clear Lock bit
+    FCTL1 = FWKEY + ERASE + EEI;              // Set Erase bit, allow interrupts
+    Flash_ptr->paridad=0;           // Dummy write to erase Flash seg
+
+    FCTL1 = FWKEY + WRT ;//+ BLKWRT;
+
+    (*Flash_ptr) = setup_editado;
+
+    FCTL1 = FWKEY;                            // Clear WRT bit
+    FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
+    
+    
     }
     
     /*---------------Acciones Posguardado-------*/
@@ -667,13 +707,16 @@ int main(void)
                     {TablaDatos[r]=TablaTemporal[r];}
                     be=53;
                     break;
-                case 53: be=99; break;
-				case 99: be=98; break;
-				case 98: be=97; break;
-				case 97: be=96; break;
-				case 96: be=54; break;
-				
-                case 54: be=55; break;
+                case 53: be=100; break;
+                case 100: be=99; break;
+                case 99: be=98; break;
+                case 98: be=97; break;
+                case 97: be=96; break;
+                case 96: be=54; break;
+
+                case 54: 
+                   if (Escritor_Dir_8  (PGA_IA_8, fastAux, &a )) {  auxiliar=0; be=56;}; 
+                  be=55; break;
                 
                 case 55:
                   switch(calibracion_setup.PGA_IA ){
@@ -693,11 +736,46 @@ int main(void)
                     case 4: fastAux=2; break;
                     case 8: fastAux=3; break;
                     case 16: fastAux=4; break;}
-              if (Escritor_Dir_8  (PGA_V_8, fastAux, &a )) {  auxiliar=0; be=0;}; 
-                
+              if (Escritor_Dir_8  (PGA_V_8, fastAux, &a )) {  auxiliar=0; be=57;};
               break; 
-             //Agregar VGAIN WGAIN AGAIN VOFFS IOFFS   
-		     //case 57: break;
+             
+//              Editando ganancia de variables
+//              Registros del ADE7953 Modificados:
+//
+//                AVGAIN_24
+//                VRMSOS_24
+//
+//                AIGAIN_24
+//                AIRMSOS_24
+//                    
+//                AWGAIN_24
+//                AWATTOS_24
+                  
+              
+              case 57: 
+              if (Escritor_Dir_8  (  AVGAIN_24, calibracion_setup.voltaje_AVGAIN , &a )) {  auxiliar=0; be=58;};
+              break;
+              
+              case 58: 
+              if (Escritor_Dir_8  ( VRMSOS_24, calibracion_setup.voltaje_VRMSOS, &a )) {  auxiliar=0; be=59;};
+              break;
+
+              case 59: 
+              if (Escritor_Dir_8  ( AIGAIN_24, calibracion_setup.corriente_AIGAIN , &a )) {  auxiliar=0; be=60;};
+              break;
+               
+              case 60:
+              if (Escritor_Dir_8  ( AIRMSOS_24, calibracion_setup.corriente_AIRMSOS, &a )) {  auxiliar=0; be=61;};
+              break;
+              
+              case 61:
+              if (Escritor_Dir_8  ( AWGAIN_24, calibracion_setup.potencia_WGAIN, &a )) {  auxiliar=0; be=62;};
+              break;
+              
+              case 62:
+              if (Escritor_Dir_8  ( AWATTOS_24, calibracion_setup.potencia_AWATTOS, &a )) {  auxiliar=0; be=0;};
+              break;
+              
              //case 58: break;
              //case 59: break;
              //case 60: break;
@@ -756,8 +834,9 @@ int main(void)
         static int32_t Voltaje_Medido, I_Medido, P_Medido, Q_Medido, I_rms,E_Activa,E_Reactiva;
         static uint32_t Voltaje_rms , Voltaje_pico, kiloWh;
         static float Voltaje_Ins_F,Voltaje_rms_F, Voltaje_p_F, Corriente_F, I_rms_F, Pow_F, Q_F;
-        static float E_Activa_F,E_Reactiva_F,Frecuenciahz;
-             
+        static float E_Reactiva_F,Frecuenciahz;
+        static float E_Activa_F=0;
+               
         static float PF_F;
         static int16_t PowerFactor, Periodo;
 
@@ -828,9 +907,35 @@ int main(void)
         E_Reactiva_F=E_Reactiva*((40.5*preCalculoV*preCalculoI)/2147483392);// Watt segundo 
         E_Acumulator=E_Acumulator+E_Activa_F;
         kiloWh=E_Acumulator/(3600*1000);
-
         PF_F=((float)PowerFactor)/32767; //32767;
 
+        if ( tick_40s_elapsed )
+          {
+          //////guardar
+          //////
+          ////// Usar sector D
+//          Flash_ptrD = (char *)0x1000;              // Initialize Flash segment D ptr
+          //////////
+
+
+          FCTL2 = FWKEY + FSSEL0 + FN1;             // MCLK/3 for Flash Timing Generator (257 kHz a 476 kHz)
+          long double *Flash_ptr5;                          // Flash pointer
+
+          Flash_ptr5 = (long double*)0x1000;               // Initialize Flash pointer  Flash segment D
+          FCTL3 = FWKEY;                            // Clear Lock bit
+          FCTL1 = FWKEY + ERASE + EEI;              // Set Erase bit, allow interrupts
+          *Flash_ptr5=7;           // Dummy write to erase Flash seg
+
+          FCTL1 = FWKEY + WRT ;//+ BLKWRT;
+
+          (*Flash_ptr5) = E_Acumulator;
+
+          FCTL1 = FWKEY;                            // Clear WRT bit
+          FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
+          ////////
+          }
+
+        
         float multitodo, multi_total;
         
         /*----------- Ejecucion de Relé  (Alarma)--------*/
@@ -867,6 +972,24 @@ int main(void)
   
         if(setup_inicial.flag_reset_energy){
             E_Acumulator=0;
+            setup_inicial.flag_reset_energy=0;
+            
+            FCTL2 = FWKEY + FSSEL0 + FN1;             // MCLK/3 for Flash Timing Generator (257 kHz a 476 kHz)
+            long double *set_cero;                          // Flash pointer
+
+            set_cero = (long double*)0x1000;               // Initialize Flash pointer  Flash segment D
+            FCTL3 = FWKEY;                            // Clear Lock bit
+            FCTL1 = FWKEY + ERASE + EEI;              // Set Erase bit, allow interrupts
+            *set_cero=0;           // Dummy write to erase Flash seg
+
+            FCTL1 = FWKEY + WRT ;//+ BLKWRT;
+
+            (*set_cero) = 0;
+
+            FCTL1 = FWKEY;                            // Clear WRT bit
+            FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
+            //
+
             setup_inicial.flag_reset_energy=0; }
 
         /* Armado de tabla de floats */
@@ -1107,6 +1230,56 @@ int numero_input( void) {
 	  
 }
 
+float flt_input( void) {
+
+  		int ese=0, coma=16;
+		float gamma=0 , scale=0.1;
+                  
+		for (int r=0;r<16;r=r+1){
+
+		  if(AuxBuffer[r]==',' || AuxBuffer[r]=='.'){
+		  coma=r;
+		  }
+
+                  if(AuxBuffer[r]=='*' || AuxBuffer[r]==0xD)
+                  {
+		  ese=r;
+                  r=17;
+		  }
+                  
+		}
+
+                //             0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15      
+                // vector[16]=[1 2 3 4 , 5 6 7 8 9  9  1  0  7  *  1 7 8 4 ...]
+                  //buscamos decimales
+                if(ese>0){
+                    if(coma<16){
+                      for (int t=coma+1;t<ese;t=t+1){
+                          if(AuxBuffer[t]>47 && AuxBuffer[t]<58){
+                          gamma=gamma+(scale*(AuxBuffer[t]-48));
+                          scale=scale/10;
+                          }
+                      }
+                      ese=coma;
+                    }
+                
+                    scale=1;
+                    
+                    //pasamos el entero
+                    for (int r=ese-1;r>-1;r=r-1){
+                        if(AuxBuffer[r]>47 && AuxBuffer[r]<58){
+                            gamma=gamma+(scale*(AuxBuffer[r]-48));
+                            scale=scale*10;
+                            }
+                        for(int r=ese;r<16;r++){AuxBuffer[r]=0;};
+                    }
+                    return gamma;
+
+                }
+
+		else{return 0;};
+	  
+}
 
 /*------------------ Menu Client ---  CFG --------------------------------*/
 
@@ -2014,6 +2187,8 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
     char m4_4   []="Ingrese enter o * para continuar\n\r";
     char m4_5   []="Error en el punto ";
     char m4_6   []="Para aplicar correcciones de calibracion Ingrese enter o *\n\r";
+    char m4_7   []="Referencia en sofware ";
+    char m4_8   []="Medición ingresada ";
   
     char m4_percent   []="%";
     char m_4_OK   []="Datos ingresados\n\r";
@@ -2178,7 +2353,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 Send_Text(color_amarillo);              
                 Send_Text(m_ins); 
                 Send_Text(color_reset);              
-                Setup->Resistores_VP_N=numero_input();//Editar resistores para VP-N
+                Setup->Resistores_VP_N=flt_input();//Editar resistores para VP-N
                 *P_M_switch=2; 
                 *P_flag_1=1; 
                 aux_menu=0;}
@@ -2202,7 +2377,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 Send_Text(color_amarillo);              
                 Send_Text(m_ins); 
                 Send_Text(color_reset);        
-                Setup->Shunt_IAP_N=numero_input();//Editar Resistores IA
+                Setup->Shunt_IAP_N=flt_input();//Editar Resistores IA
                 *P_M_switch=2; 
                 *P_flag_1=1; 
                 aux_menu=0;}
@@ -2282,11 +2457,11 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 *P_flag_1=0;}
           
             //Cambiar PGA_IA
-            if(aux_menu=='2'){Send_Text(salto1);Send_Text(m3_01);Setup->PGA_IA=2; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
-            if(aux_menu=='3'){Send_Text(salto1);Send_Text(m3_02);Setup->PGA_IA=4; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
-            if(aux_menu=='4'){Send_Text(salto1);Send_Text(m3_03);Setup->PGA_IA=8; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
-            if(aux_menu=='5'){Send_Text(salto1);Send_Text(m3_04);Setup->PGA_IA=16;*P_M_switch=3; *P_flag_1=1; aux_menu=0;}
-            if(aux_menu=='6'){Send_Text(salto1);Send_Text(m3_05);Setup->PGA_IA=22;*P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='2'){Send_Text(salto1);Send_Text(m3_01);Setup->PGA_IA=2; Setup->flag_GUARDA_CALIB=1; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='3'){Send_Text(salto1);Send_Text(m3_02);Setup->PGA_IA=4; Setup->flag_GUARDA_CALIB=1; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='4'){Send_Text(salto1);Send_Text(m3_03);Setup->PGA_IA=8; Setup->flag_GUARDA_CALIB=1; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='5'){Send_Text(salto1);Send_Text(m3_04);Setup->PGA_IA=16; Setup->flag_GUARDA_CALIB=1; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='6'){Send_Text(salto1);Send_Text(m3_05);Setup->PGA_IA=22; Setup->flag_GUARDA_CALIB=1; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
             
             if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
                 *P_M_switch=3; 
@@ -2306,11 +2481,11 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 Send_Text(m_ESC);
                 *P_flag_1=0;}
         
-            if(aux_menu=='1'){Send_Text(salto1);Send_Text(m3_00);Setup->PGA_V=1; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//Cambiar PGA_V
-            if(aux_menu=='2'){Send_Text(salto1);Send_Text(m3_01);Setup->PGA_V=2; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
-            if(aux_menu=='3'){Send_Text(salto1);Send_Text(m3_02);Setup->PGA_V=4; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
-            if(aux_menu=='4'){Send_Text(salto1);Send_Text(m3_03);Setup->PGA_V=8; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
-            if(aux_menu=='5'){Send_Text(salto1);Send_Text(m3_04);Setup->PGA_V=16;*P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
+            if(aux_menu=='1'){Send_Text(salto1);Send_Text(m3_00);Setup->PGA_V=1; Setup->flag_GUARDA_CALIB=1;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//Cambiar PGA_V
+            if(aux_menu=='2'){Send_Text(salto1);Send_Text(m3_01);Setup->PGA_V=2; Setup->flag_GUARDA_CALIB=1;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
+            if(aux_menu=='3'){Send_Text(salto1);Send_Text(m3_02);Setup->PGA_V=4; Setup->flag_GUARDA_CALIB=1;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
+            if(aux_menu=='4'){Send_Text(salto1);Send_Text(m3_03);Setup->PGA_V=8; Setup->flag_GUARDA_CALIB=1;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
+            if(aux_menu=='5'){Send_Text(salto1);Send_Text(m3_04);Setup->PGA_V=16; Setup->flag_GUARDA_CALIB=1; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
         
             if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
                 *P_M_switch=3; 
@@ -2378,7 +2553,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             
 
             if(aux_menu=='*'||aux_menu==0xD){
-            Setup->Vector_Voltaje[flagBucle] =numero_input();
+            Setup->Vector_Voltaje[flagBucle] =flt_input();
             Setup->Vector_Voltaje[flagBucle+5] = *(Mediciones+1);
 
             Send_Text(salto1);
@@ -2404,8 +2579,8 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
 
 				  
                     Send_Text(m4_5);                    //Error en punto 
-                    muestra_int=Setup->Vector_Voltaje[r];
-                    snprintf(enter, sizeof(enter), "%d", 0, muestra_int); //El punto de tension para el error
+                    muestra_float=Setup->Vector_Voltaje[r]; 
+                    snprintf(enter, sizeof(enter), "%f", 0, muestra_float);//El punto de tension para el error
                     Send_Text(enter);                   //143
                     Send_Text(m4_1_1 );                 // Volts
                     Send_Text(salto1);
@@ -2427,14 +2602,17 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 float A, B;
 		uint32_t ce;
                 A=Setup->Vector_Voltaje[0];
+                A=A * 4624387584 * 1.4142135623731 * Setup->PGA_V / (1+ Setup->Resistores_VP_N);
                 A=A*A;
+               
                 B=Setup->Vector_Voltaje[0+5];
+                B=B * 4624387584 * 1.4142135623731 * Setup->PGA_V / (1+ Setup->Resistores_VP_N);
                 B=B*B;
-		ce= ((A-B)/(4096));
+		
+                ce= ((A-B)/(4096));
+                
                 Setup->voltaje_VRMSOS = ce;
-                
-                
-                
+                                
                 float calibracionV;
                 calibracionV=(Setup->Vector_Voltaje[4])/(Setup->Vector_Voltaje[4+5]);
                 //0x400000
@@ -2482,7 +2660,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             
 
             if(aux_menu=='*'||aux_menu==0xD){
-            Setup->Vector_Corriente[flagBucle] =numero_input();
+            Setup->Vector_Corriente[flagBucle] =flt_input();
             Setup->Vector_Corriente[flagBucle+5] = *(Mediciones+4);
 
             Send_Text(salto1);
@@ -2507,8 +2685,8 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
 
 				  
                     Send_Text(m4_5);                    //Error en punto 
-                    muestra_int=Setup->Vector_Corriente[r];
-                    snprintf(enter, sizeof(enter), "%d", 0, muestra_int); //El punto de corriente para el error
+                    muestra_float=Setup->Vector_Corriente[r];
+                    snprintf(enter, sizeof(enter), "%f", 0, muestra_float);//El punto de corriente para el error
                     Send_Text(enter);                   //143
                     Send_Text(m4_1_2 );                 // miliAmpere
                     Send_Text(salto1);
@@ -2530,9 +2708,13 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 float A, B;
 		uint32_t ce;
                 A=Setup->Vector_Corriente[0];
+                A= A * 578048448 * 1.4142135623731 * Setup->Shunt_IAP_N * Setup->PGA_IA /125;
                 A=A*A;
+                
                 B=Setup->Vector_Corriente[0+5];
+                B= B * 578048448 * 1.4142135623731 * Setup->Shunt_IAP_N * Setup->PGA_IA /125;
                 B=B*B;
+                
 		ce= ((A-B)/(4096));
                 Setup->corriente_AIRMSOS = ce;
                 
@@ -2584,7 +2766,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             
 
             if(aux_menu=='*'||aux_menu==0xD){
-            Setup->Vector_Potencia [flagBucle] =numero_input();
+            Setup->Vector_Potencia [flagBucle] =flt_input();
             Setup->Vector_Potencia [flagBucle+5] = *(Mediciones+5);
 
             Send_Text(salto1);
@@ -2607,9 +2789,9 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 *P_flag_1=0;
                 for(int r=0; r<5; r++){
                     Send_Text(m4_5);                    //Error en punto 
-                    muestra_int=Setup->Vector_Potencia[r];
+                    muestra_float=Setup->Vector_Potencia[r];
 
-                    snprintf(enter, sizeof(enter), "%d", 0, muestra_int); //El punto de Potencia para el error
+                    snprintf(enter, sizeof(enter), "%f", 0, muestra_float); //El punto de Potencia para el error
                     Send_Text(enter);                   //143
                     Send_Text(m4_1_3 );                 // Watts
                     Send_Text(salto1);
@@ -2627,11 +2809,20 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
 
             if(aux_menu=='*'||aux_menu==0xD){
                 Setup->flag_GUARDA_CALIB=1;
-                //no offset
+                //no offset (No añadimos offset a la potencia, el datasheet de aplicacion no lo recomienda)
                 //Calibracion offset
                 //float A, B;
                 //A=Setup->Vector_Potencia[0];
                 //A=A*A;
+                                  
+                //A= A* 1244774656 I S V /(125*(R+1));
+                //Implementar
+               // A= A* 1244774656 *( Setup->PGA_IA  * Setup->PGA_V  * Setup->Shunt_IAP_N) /(125*(Setup->Resistores_VP_N+1));
+                // Testeo
+               // A= A* 1244774656* ( calibracion_setup.PGA_IA  * calibracion_setup.PGA_V  * calibracion_setup.Shunt_IAP_N) /(125*(calibracion_setup.Resistores_VP_N+1));
+
+             
+                
                 //B=Setup->Vector_Potencia[0+5];
                 //B=B*B;
                 //Setup->potencia_AWATTOS= int ((A-B)/(4096));
@@ -2809,19 +3000,19 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             
             if(aux_menu=='1'){ 
               Send_Text(salto1); Send_Text(color_amarillo); Send_Text(m5_1_001  ); Send_Text(color_reset);
-              Setup->offset_4_20_= ((Setup->proporcional_4_20_)+1); *P_flag_1=1; aux_menu=0; auxiliar2=0; } 
+              Setup->proporcional_4_20_= ((Setup->proporcional_4_20_)+1); *P_flag_1=1; aux_menu=0; auxiliar2=0; } 
 
             if(aux_menu=='2'){ 
               Send_Text(salto1); Send_Text(color_amarillo); Send_Text(m5_1_001  ); Send_Text(color_reset);
-              Setup->offset_4_20_= ((Setup->proporcional_4_20_)+10); *P_flag_1=1; aux_menu=0; auxiliar2=0; } 
+              Setup->proporcional_4_20_= ((Setup->proporcional_4_20_)+10); *P_flag_1=1; aux_menu=0; auxiliar2=0; } 
 
             if(aux_menu=='3'){ 
               Send_Text(salto1); Send_Text(color_amarillo); Send_Text(m5_1_002   ); Send_Text(color_reset);
-              Setup->offset_4_20_= ((Setup->proporcional_4_20_)-1); *P_flag_1=1; aux_menu=0; auxiliar2=0; } 	
+              Setup->proporcional_4_20_= ((Setup->proporcional_4_20_)-1); *P_flag_1=1; aux_menu=0; auxiliar2=0; } 	
             
             if(aux_menu=='4'){ 
               Send_Text(salto1); Send_Text(color_amarillo); Send_Text(m5_1_002   ); Send_Text(color_reset);
-              Setup->offset_4_20_= ((Setup->proporcional_4_20_)-10); *P_flag_1=1; aux_menu=0; auxiliar2=0; } 	
+              Setup->proporcional_4_20_= ((Setup->proporcional_4_20_)-10); *P_flag_1=1; aux_menu=0; auxiliar2=0; } 	
             
             if( ( Setup->proporcional_4_20_)<0 ){ Setup->proporcional_4_20_=0;}
 
@@ -2892,7 +3083,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             else{ ar=2; *P_M_switch=57;}
             
 
-            Setup->Vector_SalCorriente[ar] = numero_input();
+            Setup->Vector_SalCorriente[ar] = flt_input();
             Send_Text(salto1);
             Send_Text(color_amarillo);
             Send_Text(m_ins);
@@ -2912,26 +3103,34 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
         case 57:
             if(*P_flag_1){
                 *P_flag_1=0;
-                for(int r=0; r<3; r++){
-                    Send_Text(m4_5);                    //Error en punto 
-                    muestra_int=Setup->Vector_SalCorriente[r]; // 20 miliampere
-                    Setup->Vector_SalCorriente[3]=4;
-                    Setup->Vector_SalCorriente[4]=12;
-                    Setup->Vector_SalCorriente[5]=20;
+                Setup->Vector_SalCorriente[3]=4;
+                Setup->Vector_SalCorriente[4]=12;
+                Setup->Vector_SalCorriente[5]=20;
 
-                    
-                    snprintf(enter, sizeof(enter), "%d", 0, muestra_int); //El punto de Potencia para el error
-                    Send_Text(enter);                   //143
-                    Send_Text(m4_1_2 );                 // Amperes
-                 
+                for(int r=0; r<3; r++){
+                   
+                    Send_Text(m4_7);                    //Valor referencia 
+                    muestra_int=Setup->Vector_SalCorriente[r+3]; // 20 miliampere
+                    snprintf(enter, sizeof(enter), "%d", 0, muestra_int);       //valor
+                    Send_Text(enter);                                           //143
+                    Send_Text(m4_1_2 );                                         // Amperes
                     Send_Text(salto1);
 
+                    Send_Text(m4_8);
+                    muestra_float=Setup->Vector_SalCorriente[r];
+                    snprintf(enter, sizeof(enter), "%f", 0, muestra_float); //muestra ingresado
+                    Send_Text(enter);
+                    Send_Text(m4_1_2 );     
+                    Send_Text(salto1);
+                    
+                    Send_Text(m4_5);
                     muestra_float=((Setup->Vector_SalCorriente[r])- (Setup->Vector_SalCorriente[r+3]))/(Setup->Vector_SalCorriente[r+3]);
                     muestra_float=muestra_float*100;
                     snprintf(enter, sizeof(enter), "%f", 0, muestra_float); //Porcentaje de error
                     Send_Text(enter);                   //10
                     Send_Text(m4_percent );             //% 
-                    Send_Text(salto1);                }
+                    Send_Text(salto1);
+                    Send_Text(salto1);}
                 
                 Send_Text(m4_4);// Si desea que el dispositivo calibre apriete enter, de lo contrario escape
                 
