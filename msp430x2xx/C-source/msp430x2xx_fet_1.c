@@ -119,7 +119,8 @@ typedef struct  {
         bool            modbus_puerto;
         uint8_t         salida4_20;
         uint8_t         alarma4_20;
-        uint32_t        valoralarma4_20;
+        uint32_t        valoralarma4_20_max;
+        uint32_t        valoralarma4_20_min;
         bool            flag4_20;
         bool            flag_reset_energy;
         bool            flag_GUARDAR;
@@ -321,7 +322,8 @@ int main(void)
         0,//modbus_puerto=0 (485)     1 (232)
         1,//salida4_20=1; 1 Tension 2 Corriente 3 Potencia activa 4 Potencia reactiva 5 Frecuencia 6 Factor de Potencia
         1,//alarma4_20=1  1 Tension 2 Corriente 3 Potencia activa 4 Potencia reactiva 5 Frecuencia 6 Factor de Potencia
-        100,//valoralarma4_20=100
+        120,//valoralarma4_20_max=100
+        80,//valoralarma4_20_min=100
         0,//flag4_20=0  //0 Inactiva rele //1 activa rele        
         0,//flag_reset_energy
         0//flag_GUARDAR   
@@ -950,12 +952,17 @@ int main(void)
             case 5:  multitodo= Frecuenciahz;       break;
             case 6:  multitodo= PF_F;               break;                         
             }                  
-            if(multitodo>(setup_inicial.valoralarma4_20)){
+            if(multitodo>(setup_inicial.valoralarma4_20_max)){
                 //P6OUT|= 0x02;
                 P3OUT|= 0x02; }
-            else {
-              P3OUT&= ~0x02;}   //P6OUT&= ~0x02;}
-
+            //else { P3OUT&= ~0x02;}   //P6OUT&= ~0x02;}
+            
+            if(multitodo<(setup_inicial.valoralarma4_20_min)){
+                //P6OUT|= 0x02;
+                P3OUT&= ~0x02; }
+            
+            
+            
         } 
         /*----------- Lazo de corriente --------*/
         switch( setup_inicial.salida4_20){
@@ -1427,10 +1434,28 @@ void menu_cliente(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, estructur
     char m4_S_1[]="ACTIVA\n\r \n\r";
     
     char m4_L[]="L:Limite para activación: ";//100
+    
+    char m4_L1[]="L:Limite para des-activación: ";//100
+    
+    
 
-    char m4_L_0[]="Inserte valor de la variable para limite de activacion\n\r"; 
+//    char m4_L_0[]="Inserte valor de la variable para limite de activacion\n\r"; 
     char m4_L_1[]="Variable ingresada\n\r";//100
     char m4_L_2[]="Cancelado\n\r";//100
+
+    /*
+    Modficar 4.2.5 OPCIÓN 4: Alarma
+    Modificar opcion L por:
+    L1: Límite mínimo para activación: 100
+    */
+//    char m4_L_7[]="L1: Límite máximo para des-activación:\n\r";//120
+//    char m4_L_8[]="L2: Límite mínimo para activación:\n\r";//80
+
+    char m4_L_9[]="Inserte valor de la variable para limite de activacion\n\r"; 
+    char m4_L_10[]="Inserte valor de la variable para limite de desactivacion\n\r"; 
+
+    char m4_L_4[]="Cancelado\n\r";//100
+
     
     //m3_0_2    char m4_0_1[]="Cambiar Variable: Seleccione una opcion (1-6)\n\r";
     
@@ -1492,7 +1517,8 @@ void menu_cliente(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, estructur
                 inicial->modbus_puerto=0;
                 inicial->salida4_20=1;
                 inicial->alarma4_20=1;
-                inicial->valoralarma4_20=100;
+                inicial->valoralarma4_20_max=120;
+                inicial->valoralarma4_20_min=80;
                 inicial->flag4_20=0;
                 inicial->flag_reset_energy=0;
                 inicial->flag_GUARDAR=0;
@@ -1974,12 +2000,17 @@ void menu_cliente(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, estructur
             
             Send_Text(m4_L);
             Send_Text(color_cyan);
-            escribir_int=inicial->valoralarma4_20;            //escribir limite de activacion
+            escribir_int=inicial->valoralarma4_20_max;            //escribir limite de activacion
             snprintf(Fbuffer, sizeof(Fbuffer), "%d", 0, escribir_int);
             Send_Text(Fbuffer); Send_Text(color_reset);
-                
             Send_Text(salto1);
             
+            Send_Text(m4_L1);
+            Send_Text(color_cyan);
+            escribir_int=inicial->valoralarma4_20_min;            //escribir limite de activacion
+            snprintf(Fbuffer, sizeof(Fbuffer), "%d", 0, escribir_int);
+            Send_Text(Fbuffer); Send_Text(color_reset);
+            Send_Text(salto1);
 
             Send_Text(m3_0_2);
             Send_Text(color_cyan);
@@ -2026,20 +2057,21 @@ void menu_cliente(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, estructur
             if(aux_menu=='L'||aux_menu=='l'){*P_M_switch=41; *P_flag_1=1; aux_menu=0; }      
             if(aux_menu=='S'||aux_menu=='s'){*P_M_switch=4; *P_flag_1=1; aux_menu=0; inicial->flag4_20=! inicial->flag4_20;}      
             if(aux_menu=='D'||aux_menu=='d'){*P_M_switch=4; *P_flag_1=1; aux_menu=0;
-                inicial->alarma4_20=1;inicial->valoralarma4_20=100;inicial->flag4_20=0;
+                inicial->alarma4_20=1;inicial->valoralarma4_20_max=110;inicial->valoralarma4_20_min=80;inicial->flag4_20=0;
                 Send_Text(color_amarillo); Send_Text(m_D_0); Send_Text(color_reset);}      
 
             break;
             
             case 41:
-            inicial->valoralarma4_20=500;
+           // inicial->valoralarma4_20_max=500
+           // inicial->valoralarma4_20_min=498
             ////
             ///
               //Inserte valor, presione * para confirmar q para salir
             if(*P_flag_1){
                 Send_Text(FORM_FEED_T);
                 Send_Text(salto1);
-                Send_Text(m4_L_0); // Inserte valor de la variable para limite de activacionr/n
+                Send_Text(m4_L_9); // Inserte valor de la variable para limite activacionr/n
                 Send_Text(salto1);
                 Send_Text(m_ESC);
                 auxiliar2=0;
@@ -2052,8 +2084,8 @@ void menu_cliente(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, estructur
                 Send_Text(salto1);
                 Send_Text(color_reset);
                 
-                inicial->valoralarma4_20=numero_input();//Editar resistores para VP-N
-                *P_M_switch=4; 
+                inicial->valoralarma4_20_max=numero_input();//Editar resistores para VP-N
+                *P_M_switch=42; 
                 *P_flag_1=1; 
                 aux_menu=0;}
 
@@ -2066,9 +2098,51 @@ void menu_cliente(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, estructur
                 aux_menu=1;}
             break;
             ///
+            case 42:
+           // inicial->valoralarma4_20_max=500
+           // inicial->valoralarma4_20_min=498
+            ////
+            ///
+              //Inserte valor, presione * para confirmar q para salir
+            if(*P_flag_1){
+                Send_Text(FORM_FEED_T);
+                Send_Text(salto1);
+                Send_Text(m4_L_10); // Inserte valor de la variable para limite de desactivacionr/n
+                Send_Text(salto1);
+
+                
+                Send_Text(m_ESC);
+                auxiliar2=0;
+                *P_flag_1=0;}
+           
+            if(aux_menu=='*'||aux_menu==0xD){
+                Send_Text(salto1);
+                Send_Text(color_amarillo);
+                Send_Text(m4_L_1);//Insertado/r/n
+                Send_Text(salto1);
+                Send_Text(color_reset);
+                
+                inicial->valoralarma4_20_min=numero_input();//Editar resistores para VP-N
+                *P_M_switch=4; 
+                *P_flag_1=1; 
+                aux_menu=0;}
+
+            if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
+                Send_Text(color_amarillo);
+                Send_Text(m4_L_2);//cancelador/n
+                Send_Text(color_reset);
+                *P_M_switch=4; 
+                *P_flag_1=1; 
+                aux_menu=1;}
+            break;
+            
+            
+            
             ////
               
-            break;
+            
+            
+            
     }
 }
 
@@ -2172,7 +2246,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
 
     
     
-    ////////////////////-Rehecho-//////////////////////////////////
+    ////////////////////- 4 -//////////////////////////////////
     char m4_0 []="Menu - Calibracion de variables:\n\r";
     char m4_1 []="1.Calibrar Voltaje\n\r" ;     //  AVGAIN AVGAIN_24
     char m4_2 []="2.Calibrar Corriente\n\r";     //  AIGAIN AIGAIN_24
@@ -2195,7 +2269,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
     
     
 
-    ////////////////-Remake-////////////////
+    ////////////////- 5 -////////////////
     char m5_0 []="Menu - Calibracion de salida 4-20 mA:\n\r";
     char m5_1 []="1. Ajustar puntos salida de corriente\n\r";
     char m5_2 []="2. Verificar puntos salida de corriente\n\r";
