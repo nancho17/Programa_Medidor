@@ -488,8 +488,9 @@ int main(void)
     uint8_t TablaTemporal[47];  // Tabla para la captura de datos del ADE7953      
 	
     auxiliar=0;		//contador para la recepcion en UART0
-    static int be=55;     	//contador para la tabla de datos
-
+    //static int be=55;     	//contador para la tabla de datos
+	static int be=53;     	//comienza con configuracion previa
+	
     
     float LazoCorriente =0x00; //Variable a enviar al lazo de corriente
     float Tabla_floats[13];
@@ -545,16 +546,16 @@ int main(void)
     be=52;
 
     FCTL2 = FWKEY + FSSEL0 + FN1;             // MCLK/3 for Flash Timing Generator (257 kHz a 476 kHz)
-    estructura_cliente *Flash_ptr;                          // Flash pointer
+    boot_menu *Flash_ptr9;                          // Flash pointer
 
-    Flash_ptr = (estructura_cliente*)0x1040;               // Initialize Flash pointer
+    Flash_ptr9 = (boot_menu*)0x1080;               // Initialize Flash pointer
     FCTL3 = FWKEY;                            // Clear Lock bit
     FCTL1 = FWKEY + ERASE + EEI;              // Set Erase bit, allow interrupts
-    Flash_ptr->paridad=0;           // Dummy write to erase Flash seg
+    Flash_ptr9->flag_GUARDA_CALIB=0;           // Dummy write to erase Flash seg
 
     FCTL1 = FWKEY + WRT ;//+ BLKWRT;
 
-    (*Flash_ptr) = setup_editado;
+    (*Flash_ptr9) = calibracion_setup;
 
     FCTL1 = FWKEY;                            // Clear WRT bit
     FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
@@ -710,15 +711,12 @@ int main(void)
                     be=53;
                     break;
                 case 53: be=100; break;
-                case 100: be=99; break;
-                case 99: be=98; break;
-                case 98: be=97; break;
-                case 97: be=96; break;
-                case 96: be=54; break;
-
-                case 54: 
-                   if (Escritor_Dir_8  (PGA_IA_8, fastAux, &a )) {  auxiliar=0; be=56;}; 
-                  be=55; break;
+                case 100: if (Lector_Dir_8  (LCYCMODE_8    , &a )) {  auxiliar=0; be=99;};  break;
+				case 99:  if (Lector_Dir_8  (LAST_OP_8   , &a )) { auxiliar =0;   be=98;};  break;
+				case 98: //delay 
+				  be=54; break;
+                case 54:  //Inicia
+				  be=55; break;
                 
                 case 55:
                   switch(calibracion_setup.PGA_IA ){
@@ -868,7 +866,7 @@ int main(void)
 	const float base_shunt= 1000;
         const float base_potencia= 1244774656;
         const float base_energia= 2147483392;
-        
+                                                                    //  0x00    0x01    0x02    0x03    0x04    0x05
                                                                     //  1       2       4       8       16      22
         float gananciaIA =(float) ((0.5)/calibracion_setup.PGA_IA); //      0.250       0.125   0.0625  0.03125 0.0227
         float gananciaV = (float) ((0.5)/calibracion_setup.PGA_V) ; // 0.5  0.250       0.125   0.0625  0.03125 
@@ -877,6 +875,7 @@ int main(void)
         
         //Calculo de la frecuencia de la red electrica alterna
         Frecuenciahz=223750/(Periodo+1);
+        //if (Periodo==0) {Frecuenciahz=0;}
         
         //Calculo del voltaje Instantaneo
         Voltaje_Ins_F=(Voltaje_Medido*preCalculoV)/1664000000;
@@ -888,7 +887,9 @@ int main(void)
         //24bit unsigned... 
         preCalculoI=(calibracion_setup.Shunt_IAP_N)/base_shunt;
         preCalculoI=(gananciaIA)/preCalculoI;  //0.5V/ 2 (ganancia) 0.25
-        Corriente_F=(((float) I_Medido)*preCalculoI)/base_instantanea;  //0.1 ohm 2.5 ampere 0.250mv
+        
+        Corriente_F=( (I_Medido) *preCalculoI)/base_instantanea;  //0.1 ohm 2.5 ampere 0.250mv
+        //Corriente_F=(((float) I_Medido)*preCalculoI)/base_instantanea;  //0.1 ohm 2.5 ampere 0.250mv
 
         // Calculo de Potencia
         Pow_F=(P_Medido*(preCalculoI*preCalculoV*0.5))/1244774656;    // 619.375 W ? 4862401 LSBs (decimal) 
@@ -2513,7 +2514,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             Send_Text(color_reset);
             *P_flag_1=0;}
         
-            if(aux_menu=='0'|| aux_menu==0x1B){*P_M_switch=0; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='0'|| aux_menu==0x1B){Setup->flag_GUARDA_CALIB=1; *P_M_switch=0; *P_flag_1=1; aux_menu=0;}
             if(aux_menu=='1'){*P_M_switch=31; *P_flag_1=1; aux_menu=0;}
             if(aux_menu=='2'){*P_M_switch=32; *P_flag_1=1; aux_menu=0;}
             break;
@@ -2531,11 +2532,11 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 *P_flag_1=0;}
           
             //Cambiar PGA_IA
-            if(aux_menu=='2'){Send_Text(salto1);Send_Text(m3_01);Setup->PGA_IA=2; Setup->flag_GUARDA_CALIB=1; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
-            if(aux_menu=='3'){Send_Text(salto1);Send_Text(m3_02);Setup->PGA_IA=4; Setup->flag_GUARDA_CALIB=1; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
-            if(aux_menu=='4'){Send_Text(salto1);Send_Text(m3_03);Setup->PGA_IA=8; Setup->flag_GUARDA_CALIB=1; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
-            if(aux_menu=='5'){Send_Text(salto1);Send_Text(m3_04);Setup->PGA_IA=16; Setup->flag_GUARDA_CALIB=1; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
-            if(aux_menu=='6'){Send_Text(salto1);Send_Text(m3_05);Setup->PGA_IA=22; Setup->flag_GUARDA_CALIB=1; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='2'){Send_Text(salto1);Send_Text(m3_01);Setup->PGA_IA=2;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='3'){Send_Text(salto1);Send_Text(m3_02);Setup->PGA_IA=4;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='4'){Send_Text(salto1);Send_Text(m3_03);Setup->PGA_IA=8;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='5'){Send_Text(salto1);Send_Text(m3_04);Setup->PGA_IA=16; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
+            if(aux_menu=='6'){Send_Text(salto1);Send_Text(m3_05);Setup->PGA_IA=22; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}
             
             if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
                 *P_M_switch=3; 
@@ -2555,11 +2556,11 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 Send_Text(m_ESC);
                 *P_flag_1=0;}
         
-            if(aux_menu=='1'){Send_Text(salto1);Send_Text(m3_00);Setup->PGA_V=1; Setup->flag_GUARDA_CALIB=1;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//Cambiar PGA_V
-            if(aux_menu=='2'){Send_Text(salto1);Send_Text(m3_01);Setup->PGA_V=2; Setup->flag_GUARDA_CALIB=1;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
-            if(aux_menu=='3'){Send_Text(salto1);Send_Text(m3_02);Setup->PGA_V=4; Setup->flag_GUARDA_CALIB=1;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
-            if(aux_menu=='4'){Send_Text(salto1);Send_Text(m3_03);Setup->PGA_V=8; Setup->flag_GUARDA_CALIB=1;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
-            if(aux_menu=='5'){Send_Text(salto1);Send_Text(m3_04);Setup->PGA_V=16; Setup->flag_GUARDA_CALIB=1; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
+            if(aux_menu=='1'){Send_Text(salto1);Send_Text(m3_00);Setup->PGA_V=1;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//Cambiar PGA_V
+            if(aux_menu=='2'){Send_Text(salto1);Send_Text(m3_01);Setup->PGA_V=2;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
+            if(aux_menu=='3'){Send_Text(salto1);Send_Text(m3_02);Setup->PGA_V=4;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
+            if(aux_menu=='4'){Send_Text(salto1);Send_Text(m3_03);Setup->PGA_V=8;  *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
+            if(aux_menu=='5'){Send_Text(salto1);Send_Text(m3_04);Setup->PGA_V=16; *P_M_switch=3; *P_flag_1=1; aux_menu=0;}//
         
             if(aux_menu=='q'||aux_menu=='Q'||aux_menu==0x1B){
                 *P_M_switch=3; 
