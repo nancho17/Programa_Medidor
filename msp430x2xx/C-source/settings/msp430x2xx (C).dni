@@ -17,7 +17,7 @@ Counter0=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 [EEM Cycle Counter 1]
 Counter1=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 [DebugChecksum]
-Checksum=-26370509
+Checksum=-1987684456
 [CodeCoverage]
 Enabled=_ 0
 [DriverProfiling]
@@ -114,7 +114,8 @@ Bp5=_ "STD_CODE" "Memory:0x7478" 0 0 0 0 "" 0 ""
 Bp6=_ "STD_CODE" "{$PROJ_DIR$\..\C-extras\modbus_med.c}.1046.1" 0 0 0 0 "" 0 ""
 Bp7=_ "STD_CODE" "{$PROJ_DIR$\..\C-extras\modbus_med.c}.1046.1" 0 0 0 0 "" 0 ""
 Bp8=_ "STD_CODE" "{$PROJ_DIR$\..\C-extras\modbus_med.c}.1046.1" 0 0 0 0 "" 0 ""
-Count=9
+Bp9=_ "STD_CODE" "{$PROJ_DIR$\msp430x2xx_fet_1.c}.0.1" 1 0 0 0 "" 0 ""
+Count=10
 [FET]
 Clock mode=46
 Extended Clock mode=1

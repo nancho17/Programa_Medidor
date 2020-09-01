@@ -30,7 +30,7 @@
 /*--------- Numero de Version ----------*/
 #define HW_VERSION 	"1.00"
 #define Escribir_en_FLASH   0  // 0 Normal 1 Escribir setup por primera vez
-#define Menus_solo_rs232    1  // 1 Solo ingreso por 232 0 Ingreso segun menu
+#define Menus_solo_rs232    0  // 1 Solo ingreso por 232 0 Ingreso segun menu
 
 
 /*---------Custom_Pin_Functions----------*/
@@ -227,7 +227,7 @@ void Time_Handler_2(void) {
     }
 
     
-     if (ten_ms_ticks > 100 ) {
+     if (ten_ms_ticks > 1000 ) {
        tick_10s_elapsed = true;
      }
     
@@ -276,14 +276,16 @@ __interrupt void USCI0RX_ISR(void)
 
 // Manejo interrupción RX1
 #pragma vector=USCIAB1RX_VECTOR
-__interrupt void USCI1RX_ISR(void)
+	__interrupt void USCI1RX_ISR(void)
 
 {
   LPM1_EXIT;
   if(flag_2){
-		while (!(UC1IFG&UCA1TXIFG));               // USCI_A1 TX buffer ready?
+	while (!(UC1IFG&UCA1TXIFG)){};               // USCI_A1 TX buffer ready?
 		aux_menu=UCA1RXBUF;
-		if(auxiliar2>15){auxiliar2=0;}
+		if(auxiliar2>15){
+		  
+		  auxiliar2=0;}
 		AuxBuffer[auxiliar2]=aux_menu;
 		//UCA1TXBUF = aux_menu;                     // TX -> RXed character
 		auxiliar2++;
@@ -503,7 +505,9 @@ int main(void)
     bool flag_1= true;			//Manejo de submenus serie
     int8_t menu_switch=0;	//Posiciones del menu serie
     
-    
+    uint8_t fastAux_IA =0;
+    uint8_t fastAux_V =0;
+			
     /*interrupt enable*/
     __bis_SR_register(GIE);       
   	
@@ -519,7 +523,9 @@ int main(void)
         for (int r=0;r<14;r=r+1){
             if(AuxBuffer[r]=='c' || AuxBuffer[r]=='C'){
                 if(AuxBuffer[r+1]=='f' || AuxBuffer[r+1]=='F'){
-                    if(AuxBuffer[r+2]=='g' || AuxBuffer[r+2]=='G'){aux_menu=0; flag_0=true; tick_10s_elapsed=true;}
+                    if(AuxBuffer[r+2]=='g' || AuxBuffer[r+2]=='G'){aux_menu=0; 
+					flag_0=true; 
+					tick_10s_elapsed=true;}
                 }
             }
         }
@@ -531,7 +537,8 @@ int main(void)
         for (int r=0;r<14;r=r+1){
             if(AuxBuffer[r]=='s' || AuxBuffer[r]=='S'){
                 if(AuxBuffer[r+1]=='r' || AuxBuffer[r+1]=='R'){
-                    if(AuxBuffer[r+2]=='v' || AuxBuffer[r+2]=='V'){aux_menu=0; flag_0_calib=true; tick_10s_elapsed=true;}
+                    if(AuxBuffer[r+2]=='v' || AuxBuffer[r+2]=='V'){aux_menu=0; 
+					flag_0_calib=true; tick_10s_elapsed=true;}
                 }
             }
         }
@@ -546,16 +553,16 @@ int main(void)
     be=52;
 
     FCTL2 = FWKEY + FSSEL0 + FN1;             // MCLK/3 for Flash Timing Generator (257 kHz a 476 kHz)
-    boot_menu *Flash_ptr9;                          // Flash pointer
+    boot_menu *flash_var;                          // Flash pointer
 
-    Flash_ptr9 = (boot_menu*)0x1080;               // Initialize Flash pointer
+    flash_var = (boot_menu*)0x1080;               // Initialize Flash pointer
     FCTL3 = FWKEY;                            // Clear Lock bit
     FCTL1 = FWKEY + ERASE + EEI;              // Set Erase bit, allow interrupts
-    Flash_ptr9->flag_GUARDA_CALIB=0;           // Dummy write to erase Flash seg
+    flash_var->flag_GUARDA_CALIB=0;           // Dummy write to erase Flash seg
 
     FCTL1 = FWKEY + WRT ;//+ BLKWRT;
 
-    (*Flash_ptr9) = calibracion_setup;
+    (*flash_var) = calibracion_setup;
 
     FCTL1 = FWKEY;                            // Clear WRT bit
     FCTL3 = FWKEY + LOCK;                     // Set LOCK bit
@@ -703,8 +710,24 @@ int main(void)
 				break;	}
 		}
     
-            uint8_t fastAux =0;
-            switch(be){
+            
+			
+			switch(calibracion_setup.PGA_V ){
+					case 1: fastAux_V=0; break;
+					case 2: fastAux_V=1; break;
+					case 4: fastAux_V=2; break;
+					case 8: fastAux_V=3; break;
+					case 16: fastAux_V=4; break;}
+
+			switch(calibracion_setup.PGA_IA ){
+					case 2: fastAux_IA=1; break;
+					case 4: fastAux_IA=2; break;
+					case 8: fastAux_IA=3; break;
+					case 16: fastAux_IA=4; break;
+					case 22: fastAux_IA=5; break;
+					}
+    
+		switch(be){
                 //Escribo en registros
                 case 52:  for (int r=0;r<47;r=r+1)
                     {TablaDatos[r]=TablaTemporal[r];}
@@ -719,25 +742,12 @@ int main(void)
 				  be=55; break;
                 
                 case 55:
-                  switch(calibracion_setup.PGA_IA ){
-                  case 2: fastAux=1; break;
-                  case 4: fastAux=2; break;
-                  case 8: fastAux=3; break;
-                  case 16: fastAux=4; break;
-                  case 22: fastAux=5; break;
-                  }
-                if (Escritor_Dir_8  (PGA_IA_8, fastAux, &a )) {  auxiliar=0; be=56;}; 
-                break; 
+        	        if (Escritor_Dir_8  (PGA_IA_8, fastAux_IA, &a )) {  auxiliar=0; be=56;}; 
+            	    break; 
                 
                 case 56:
-                  switch(calibracion_setup.PGA_V ){
-                    case 1: fastAux=0; break;
-                    case 2: fastAux=1; break;
-                    case 4: fastAux=2; break;
-                    case 8: fastAux=3; break;
-                    case 16: fastAux=4; break;}
-              if (Escritor_Dir_8  (PGA_V_8, fastAux, &a )) {  auxiliar=0; be=57;};
-              break; 
+	              if (Escritor_Dir_8  (PGA_V_8, fastAux_V, &a )) {  auxiliar=0; be=57;};
+    	          break; 
              
 //              Editando ganancia de variables
 //              Registros del ADE7953 Modificados:
@@ -807,7 +817,10 @@ int main(void)
                 for (int r=0;r<47;r=r+1)
                       {TablaDatos[r]=TablaTemporal[r];}
                 be=0;
-                break;
+				if(TablaDatos[1]!=fastAux_V || TablaDatos[2]!=fastAux_IA ){be=98;}
+				
+
+				break;
                 
                 default: be=be+1;   break;  }
         
@@ -831,8 +844,9 @@ int main(void)
     /*---------------------------------Calculo de Datos----------------------*/		
     if (tick_200ms_elapsed) {
               
-        static int32_t Voltaje_Medido, I_Medido, P_Medido, Q_Medido, I_rms,E_Activa,E_Reactiva;
-        static uint32_t Voltaje_rms , Voltaje_pico, kiloWh;
+        static int32_t Voltaje_Medido, I_Medido, P_Medido, Q_Medido, E_Activa,E_Reactiva;
+        static uint32_t Voltaje_rms , Voltaje_pico, I_rms;
+		static long double kiloWh;
         static float Voltaje_Ins_F,Voltaje_rms_F, Voltaje_p_F, Corriente_F, I_rms_F, Pow_F, Q_F;
         static float E_Reactiva_F,Frecuenciahz;
         static float E_Activa_F=0;
@@ -863,7 +877,7 @@ int main(void)
         const float base_instantanea=1664000000; //Value actually stored in float:1664000000 Error due to conversion:	0	
     	const float base_rms=9032007.0*256.0;//Value actually stored in float:2312193791.1 Error due to conversion:	-0.00000003%
 		
-	const float base_shunt= 1000;
+		const float base_shunt= 1000;
         const float base_potencia= 1244774656;
         const float base_energia= 2147483392;
                                                                     //  0x00    0x01    0x02    0x03    0x04    0x05
@@ -878,10 +892,10 @@ int main(void)
         //if (Periodo==0) {Frecuenciahz=0;}
         
         //Calculo del voltaje Instantaneo
-        Voltaje_Ins_F=(Voltaje_Medido*preCalculoV)/1664000000;
+        Voltaje_Ins_F=(Voltaje_Medido*preCalculoV)/1664000000; // Base instantanea
         
         //Calculo de Pico de voltaje
-        Voltaje_p_F=(Voltaje_pico*preCalculoV)/1664000000; //no encuentro datos en datasheet
+        Voltaje_p_F=(Voltaje_pico*preCalculoV)/1664000000; //no encuentro datos en datasheet, usada base instantanea
         
         // Calculo de Corriente Instantanea
         //24bit unsigned... 
@@ -906,20 +920,37 @@ int main(void)
         I_rms_F=((float)(I_rms)* preCalculoI)/base_rms;    //1.7677669529664 Irms
         
         //Calculo de Energía
-        E_Activa_F=E_Activa*((40.5*preCalculoV*preCalculoI)/2147483392);// Watt segundo (Joule) 40.5s(maximo del registro) por 619.375 W 25084.6875J
-        E_Reactiva_F=E_Reactiva*((40.5*preCalculoV*preCalculoI)/2147483392);// Watt segundo 
+
+//With full-scale inputs, the expected
+//reading in the AWATT and BWATT registers is approximately
+//4862401 LSBs (decimal)
+//aenergy		0x7FFFFF
+//AENERGYx[23:0]  256*	0x7FFFFF	= 8388607 * 256
+		
+		//
+		/*Prueba de energía*/
+		//10 segundos  530242812  40.516971 seg 2147483392 (Datasheet)
+		//E_Activa=530242812; 
+		// 10segundos en  (530242812/2147483392) *40.5
+		//29.19Vrms
+		//0.4868rms
+		//142.2  Jules 
+		E_Activa_F=E_Activa*((40.516971*preCalculoV*preCalculoI)/2147483392);// Watt segundo (Joule) 40.5s(maximo del registro) por 619.375 W 25084.6875J
+        E_Reactiva_F=E_Reactiva*((40.516971*preCalculoV*preCalculoI)/2147483392);// Watt segundo 
         E_Acumulator=E_Acumulator+E_Activa_F;
-        kiloWh=E_Acumulator/(3600*1000);
+        kiloWh=E_Acumulator/(3600000);//(3600*1000)
         PF_F=((float)PowerFactor)/32767; //32767;
 
+		/*Guardado cada 40 segundos del totalizado*/
         if ( tick_40s_elapsed )
           {
-          //////guardar
-          //////
-          ////// Usar sector D
-//          Flash_ptrD = (char *)0x1000;              // Initialize Flash segment D ptr
-          //////////
-
+          ///guardar
+          //
+          //Usar sector D
+		  // Initialize Flash segment D ptr	
+		  //Flash_ptrD = (char *)0x1000;
+		  //
+		  tick_40s_elapsed=false;
 
           FCTL2 = FWKEY + FSSEL0 + FN1;             // MCLK/3 for Flash Timing Generator (257 kHz a 476 kHz)
           long double *Flash_ptr5;                          // Flash pointer
@@ -2264,10 +2295,12 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
     char m4_6   []="Para aplicar correcciones de calibracion Ingrese enter o *\n\r";
     char m4_7   []="Referencia en sofware ";
     char m4_8   []="Medición ingresada ";
+	char m4_9   []="Se recomienda ingresar el siguiente valor para calibrar:\n\r";
   
     char m4_percent   []="%";
     char m_4_OK   []="Datos ingresados\n\r";
-    
+    char m_4_consulta   []="\n\rDesea calibrar con los datos mostrados?\n\r";
+    char m_4_consulta_0   []="*.Intro-Aceptar\n\rEsc.Salir-Cancelar\n\r";   
     
 
     ////////////////- 5 -////////////////
@@ -2295,6 +2328,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
 
     char G_0 []="G. Guardar, enviar al ADE7953 la configuración de registros\n\r";
     char G_1 []="Guardado!\n\r";
+	char  M_RMS  []=" rms\n\r";
     
 
     switch(*P_M_switch){
@@ -2487,25 +2521,31 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                     case 16:Send_Text(GM3_4);break; }
         
             Send_Text(salto1);
-             //Amperes
+             //Parte de Amperes
             Send_Text(IM_2);
             float ampermax;
 			char fec[6];
             ampermax = (Setup->Shunt_IAP_N)/(1000.0);
             ampermax=((0.5/(Setup->PGA_IA))/ampermax);
+			ampermax=ampermax/1.4142135;// a rms
 
-//            muestra_float=((flagBucle+1)*0.2)*ampermax;
+//          muestra_float=((flagBucle+1)*0.2)*ampermax; // bucles de muesra, descartado
             snprintf(fec, sizeof(fec), "%f", 0, ampermax);
-            Send_Text(fec);                
-            Send_Text(m4_1_4);  Send_Text(salto1); // Amp
-            Send_Text(salto1);
-            //Volts
+            Send_Text(fec); 		//valor
+			Send_Text(m4_1_4);  	// Amp
+			Send_Text(M_RMS);		//decir rms
+            Send_Text(salto1); 		//salto
+            
+			//Parte de Volts
             Send_Text(IM_1);
+			
             int voltmax;
             voltmax=(0.5/(Setup->PGA_V))*((Setup->Resistores_VP_N)+1);
+			voltmax=voltmax/1.4142135;// a rms
             snprintf(enter, sizeof(enter), "%d", 0, voltmax);
+			
             Send_Text(enter);
-            Send_Text(m4_1_1); Send_Text(salto1);
+            Send_Text(m4_1_1); Send_Text(M_RMS); Send_Text(salto1);
             Send_Text(salto1);
             
             Send_Text(salto1);
@@ -2616,7 +2656,11 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
 					enter[0]=0;
                     enter[sizeof(enter)-1]=0;
 					snprintf(enter, sizeof(enter), "%d", 0, muestra_int);
-                    Send_Text(enter); Send_Text(salto1);
+					Send_Text(m4_9);// Se recomienda el siguiente valor para calibrar
+                    Send_Text(enter); // Valor de tension 525
+					Send_Text(m4_1_1 ); // Volts
+					Send_Text(M_RMS);// Rms
+    				Send_Text(salto1);// fin de linea
                     Send_Text(m_ESC);}
                 else{
                     Send_Text(m_4_OK);
@@ -2629,7 +2673,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
 
             if(aux_menu=='*'||aux_menu==0xD){
             Setup->Vector_Voltaje[flagBucle] =flt_input();
-            Setup->Vector_Voltaje[flagBucle+5] = *(Mediciones+1);
+            Setup->Vector_Voltaje[flagBucle+5] = *(Mediciones+1); //Tensión RMS
 
             Send_Text(salto1);
             Send_Text(color_amarillo);
@@ -2667,7 +2711,9 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                     Send_Text(m4_percent );             //% 
                     Send_Text(salto1);                }
                 
-                Send_Text(m4_4);// Si desea que el dispositivo calibre apriete enter, de lo contrario escape
+                Send_Text(m_4_consulta);
+                Send_Text(m_4_consulta_0);
+                //Send_Text(m4_4);// Si desea que el dispositivo calibre apriete enter, de lo contrario escape
                 
             }
 
@@ -2675,7 +2721,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 Setup->flag_GUARDA_CALIB=1;
                 //Calibracion offset
                 float A, B;
-		uint32_t ce;
+				uint32_t ce;
                 A=Setup->Vector_Voltaje[0];
                 A=A * 4624387584 * 1.4142135623731 * Setup->PGA_V / (1+ Setup->Resistores_VP_N);
                 A=A*A;
@@ -2724,7 +2770,12 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                 
                 muestra_float=((flagBucle+1)*0.2)*referenciaI;
                 snprintf(enter, sizeof(enter), "%f", 0, muestra_float);
-                Send_Text(enter); Send_Text(salto1);
+				Send_Text(m4_9);// Se recomienda el siguiente valor para calibrar
+				Send_Text(enter); // Valor de tension 525
+				Send_Text(m4_1_4 ); // Ampere
+				Send_Text(M_RMS);// Rms
+				Send_Text(salto1);// fin de linea
+
                 Send_Text(m_ESC);}
             else{
               Send_Text(m_4_OK);
@@ -2763,7 +2814,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                     muestra_float=Setup->Vector_Corriente[r];
                     snprintf(enter, sizeof(enter), "%f", 0, muestra_float);//El punto de corriente para el error
                     Send_Text(enter);                   //143
-                    Send_Text(m4_1_2 );                 // miliAmpere
+                    Send_Text(m4_1_4  );                 // miliAmpere
                     Send_Text(salto1);
                                     
                     muestra_float=((Setup->Vector_Corriente[r+5])- (Setup->Vector_Corriente[r]))/(Setup->Vector_Corriente[r]);
@@ -2772,8 +2823,10 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                     Send_Text(enter);                   //10
                     Send_Text(m4_percent );             //% 
                     Send_Text(salto1);                }
-                
-                Send_Text(m4_4);// Si desea que el dispositivo calibre apriete enter, de lo contrario escape
+               
+                Send_Text(m_4_consulta);
+                Send_Text(m_4_consulta_0);
+                //Send_Text(m4_4);// Si desea que el dispositivo calibre apriete enter, de lo contrario escape
                 
             }
 
@@ -2822,16 +2875,23 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
 
                     float referenciaW, A, B;
                     A = Setup->Shunt_IAP_N/1000.0;
-                    A=((0.5/Setup->PGA_IA)/A);
-                    B=(0.5/(Setup->PGA_V))*((Setup->Resistores_VP_N)+1);
+                    A=((0.5/Setup->PGA_IA)/A); //Corriente instantanea maxima
+                    B=(0.5/(Setup->PGA_V))*((Setup->Resistores_VP_N)+1);  // voltaje instantaneo maximo
+					
 
                     //Pow_F=(P_Medido*(preCalculoI*preCalculoV*0.5));
-                    referenciaW=(0.9)*(A*B)*(0.5);
+                    referenciaW=(0.9)*(A*B)*(0.5);   // 90% de corriente rms * voltaje rms  ,(1/((2^0.5)*(2^0.5)))
 
                     muestra_float=((flagBucle+1)*0.2)*referenciaW;
                     snprintf(enter, sizeof(enter), "%f", 0, muestra_float);
-                    Send_Text(enter); Send_Text(salto1);
-                    Send_Text(m_ESC);}
+    				Send_Text(m4_9 ); //Se recomiend aingresar
+                	Send_Text(enter);  // 5258
+					Send_Text(m4_1_3 );// watts
+                    Send_Text(salto1); // fin de linea
+                    Send_Text(m_ESC);
+				
+				
+				}
                 else{
                   Send_Text(m_4_OK);
                   *P_M_switch=46;
@@ -2878,7 +2938,10 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                     Send_Text(m4_percent );             //% 
                     Send_Text(salto1);                }
                 
-                Send_Text(m4_4);// Si desea que el dispositivo calibre apriete enter, de lo contrario escape
+                Send_Text(m_4_consulta);
+                Send_Text(m_4_consulta_0);
+                //Send_Text(m4_4);// Si desea que el dispositivo calibre apriete enter, de lo contrario escape
+                
                 
             }
 
@@ -3113,7 +3176,8 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             aux_menu=0;}
             break;
             
-            // 52 Verificar puntos salida de corriente
+            // 52 Verificar puntos salida de 
+
             // -> Verificando 4mA , ingrese valor medido :
             // -> Verificando 12mA , ingrese valor medido :
             // -> Verificando 20mA , ingrese valor medido :
@@ -3206,6 +3270,7 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
                     Send_Text(m4_percent );             //% 
                     Send_Text(salto1);
                     Send_Text(salto1);}
+                
                 
                 Send_Text(m4_4);// Si desea que el dispositivo calibre apriete enter, de lo contrario escape
                 
