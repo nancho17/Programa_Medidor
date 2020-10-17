@@ -12,7 +12,7 @@
           
           
           
-        <Column0>281</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
+        <Column0>230</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
       <PreferedWindows><Position>1</Position><ScreenPosX>0</ScreenPosX><ScreenPosY>0</ScreenPosY><Windows/></PreferedWindows></Workspace>
       <Build>
         
@@ -28,20 +28,20 @@
     <Windows>
       
       
-    <Wnd2><Tabs><Tab><Identity>TabID-24177-10314</Identity><TabName>Workspace</TabName><Factory>Workspace</Factory><Session><NodeDict><ExpandedNode>msp430x2xx (C)</ExpandedNode></NodeDict></Session></Tab></Tabs><SelectedTab>0</SelectedTab></Wnd2><Wnd3><Tabs><Tab><Identity>TabID-32361-1594</Identity><TabName>Build</TabName><Factory>Build</Factory><Session/></Tab><Tab><Identity>TabID-8866-9739</Identity><TabName>Debug Log</TabName><Factory>Debug-Log</Factory><Session/></Tab></Tabs><SelectedTab>0</SelectedTab></Wnd3></Windows>
+    <Wnd2><Tabs><Tab><Identity>TabID-32361-1594</Identity><TabName>Build</TabName><Factory>Build</Factory><Session/></Tab><Tab><Identity>TabID-8866-9739</Identity><TabName>Debug Log</TabName><Factory>Debug-Log</Factory><Session/></Tab></Tabs><SelectedTab>0</SelectedTab></Wnd2><Wnd3><Tabs><Tab><Identity>TabID-2398-11040</Identity><TabName>Workspace</TabName><Factory>Workspace</Factory><Session><NodeDict><ExpandedNode>msp430x2xx (C)</ExpandedNode></NodeDict></Session></Tab></Tabs><SelectedTab>0</SelectedTab></Wnd3></Windows>
     <Editor>
       
       
       
       
-    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\msp430x2xx\C-source\msp430x2xx_fet_1.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>2269</YPos2><SelStart2>0</SelStart2><SelEnd2>123595</SelEnd2></Tab><ActiveTab>0</ActiveTab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\msp430x2xx\C-extras\modbus_med.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>71</YPos2><SelStart2>3397</SelStart2><SelEnd2>3397</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\msp430x2xx\C-extras\modbus_med.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>66</YPos2><SelStart2>2988</SelStart2><SelEnd2>3001</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\msp430x2xx\C-extras\mod_ascii.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
+    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\msp430x2xx\C-extras\ADE7953.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>27</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\msp430x2xx\C-extras\ADE7953.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>98</YPos2><SelStart2>9750</SelStart2><SelEnd2>9750</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\msp430x2xx\C-extras\mod_ascii.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\msp430x2xx\C-source\msp430x2xx_fet_1.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>3136</YPos2><SelStart2>117761</SelStart2><SelEnd2>117761</SelEnd2></Tab><ActiveTab>3</ActiveTab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\msp430x2xx\C-extras\mod_ascii.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>33</SelStart2><SelEnd2>42</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\msp430x2xx\C-extras\modbus_med.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>75</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
     <Positions>
       
       
       
       
       
-    <Top><Row0><Sizes><Toolbar-05B56210><key>iaridepm.enu1</key></Toolbar-05B56210></Sizes></Row0></Top><Left><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>611</Bottom><Right>355</Right><x>-2</x><y>-2</y><xscreen>119</xscreen><yscreen>163</yscreen><sizeHorzCX>74375</sizeHorzCX><sizeHorzCY>199510</sizeHorzCY><sizeVertCX>223125</sizeVertCX><sizeVertCY>750306</sizeVertCY></Rect></Wnd2></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd3><Rect><Top>-2</Top><Left>-2</Left><Bottom>161</Bottom><Right>1602</Right><x>-2</x><y>-2</y><xscreen>1604</xscreen><yscreen>163</yscreen><sizeHorzCX>1002500</sizeHorzCX><sizeHorzCY>199510</sizeHorzCY><sizeVertCX>74375</sizeVertCX><sizeVertCY>199510</sizeVertCY></Rect></Wnd3></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
+    <Top><Row0><Sizes><Toolbar-04D78C18><key>iaridepm.enu1</key></Toolbar-04D78C18></Sizes></Row0></Top><Left><Row0><Sizes><Wnd3><Rect><Top>-2</Top><Left>-2</Left><Bottom>527</Bottom><Right>304</Right><x>-2</x><y>-2</y><xscreen>337</xscreen><yscreen>246</yscreen><sizeHorzCX>210625</sizeHorzCX><sizeHorzCY>301102</sizeHorzCY><sizeVertCX>191250</sizeVertCX><sizeVertCY>647491</sizeVertCY></Rect></Wnd3></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>245</Bottom><Right>1602</Right><x>-2</x><y>-2</y><xscreen>1604</xscreen><yscreen>247</yscreen><sizeHorzCX>1002500</sizeHorzCX><sizeHorzCY>302326</sizeHorzCY><sizeVertCX>210625</sizeVertCX><sizeVertCY>302326</sizeVertCY></Rect></Wnd2></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
   </Desktop>
 </Workspace>
 

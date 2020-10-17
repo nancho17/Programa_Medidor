@@ -3128,21 +3128,26 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
             Send_Text(m_ESC);
             *P_flag_1=0;
             }
-            
-            float pre=(Setup->proporcional_4_20_/1000.0)+(Setup->offset_4_20_ / 1000.0); // 2V a 0.4V 
-            
-            uint16_t abb =    (pre)*(4095.0/2.5);//(2.5V = 0x0FFFh)
+            //Calculos para editar el registro del lazo de corriente
+            // referencia
+            float pre=(Setup->proporcional_4_20_/1000.0)+(Setup->offset_4_20_ / 1000.0); // 2V a 0.4V  
+            float pre_sumador=0;
+            uint16_t abb =    (pre)*(4095.0/2.5);//(2.5V = 0x0FFFh) 4,095
 
             DAC12_0CTL = DAC12IR+ DAC12AMP_5 + DAC12ENC+DAC12SREF1;
             DAC12_0DAT = abb;//(2.5V = 0x0FFFh)
             
             if(aux_menu=='1'){ 
               Send_Text(salto1); Send_Text(color_amarillo); Send_Text(m5_1_001  ); Send_Text(color_reset);
-              Setup->proporcional_4_20_= ((Setup->proporcional_4_20_)+1); *P_flag_1=1; aux_menu=0; auxiliar2=0; } 
+              pre_sumador= ((Setup->proporcional_4_20_)+1); *P_flag_1=1; aux_menu=0; auxiliar2=0; } 
 
             if(aux_menu=='2'){ 
               Send_Text(salto1); Send_Text(color_amarillo); Send_Text(m5_1_001  ); Send_Text(color_reset);
-              Setup->proporcional_4_20_= ((Setup->proporcional_4_20_)+10); *P_flag_1=1; aux_menu=0; auxiliar2=0; } 
+              pre_sumador= ((Setup->proporcional_4_20_)+10); *P_flag_1=1; aux_menu=0; auxiliar2=0; }
+            
+            pre=(pre_sumador/1000.0)+(Setup->offset_4_20_ / 1000.0);
+            
+            if (pre<2.5 && pre>0){Setup->proporcional_4_20_ = pre_sumador;} ;
 
             if(aux_menu=='3'){ 
               Send_Text(salto1); Send_Text(color_amarillo); Send_Text(m5_1_002   ); Send_Text(color_reset);
@@ -3152,7 +3157,11 @@ void menu_serie(bool *P_flag_0, bool *P_flag_1, uint8_t *P_M_switch, boot_menu *
               Send_Text(salto1); Send_Text(color_amarillo); Send_Text(m5_1_002   ); Send_Text(color_reset);
               Setup->proporcional_4_20_= ((Setup->proporcional_4_20_)-10); *P_flag_1=1; aux_menu=0; auxiliar2=0; } 	
             
-            if( ( Setup->proporcional_4_20_)<0 ){ Setup->proporcional_4_20_=0;}
+           
+            pre=(pre_sumador/1000.0)+(Setup->offset_4_20_ / 1000.0);
+            
+            if (pre<2.5 && pre>0){Setup->proporcional_4_20_ = pre_sumador;} ;
+            
 
             if(aux_menu=='G'||aux_menu=='g'){ 
               Send_Text(salto1); Send_Text(color_amarillo); Send_Text(G_1 ); Send_Text(color_reset);

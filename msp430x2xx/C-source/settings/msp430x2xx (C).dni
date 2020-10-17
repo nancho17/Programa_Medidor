@@ -114,8 +114,9 @@ Bp5=_ "STD_CODE" "Memory:0x7478" 0 0 0 0 "" 0 ""
 Bp6=_ "STD_CODE" "{$PROJ_DIR$\..\C-extras\modbus_med.c}.1046.1" 0 0 0 0 "" 0 ""
 Bp7=_ "STD_CODE" "{$PROJ_DIR$\..\C-extras\modbus_med.c}.1046.1" 0 0 0 0 "" 0 ""
 Bp8=_ "STD_CODE" "{$PROJ_DIR$\..\C-extras\modbus_med.c}.1046.1" 0 0 0 0 "" 0 ""
-Bp9=_ "STD_CODE" "{$PROJ_DIR$\msp430x2xx_fet_1.c}.0.1" 1 0 0 0 "" 0 ""
-Count=10
+Bp9=_ "STD_CODE" "{$PROJ_DIR$\msp430x2xx_fet_1.c}.3322.1" 1 0 0 0 "" 0 ""
+Bp10=_ "STD_CODE" "{$PROJ_DIR$\msp430x2xx_fet_1.c}.3133.1" 1 0 0 0 "" 0 ""
+Count=11
 [FET]
 Clock mode=46
 Extended Clock mode=1
